@@ -7,11 +7,10 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', sans-serif;
             background: linear-gradient(180deg, #0a0a2e 0%, #1a1a4e 100%);
             color: #fff;
             min-height: 100vh;
-            overflow-x: hidden;
         }
         .header {
             background: linear-gradient(135deg, #2a1a5e, #4a2a8e);
@@ -20,25 +19,22 @@
             position: sticky;
             top: 0;
             z-index: 100;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
         }
-        .header h1 { font-size: 20px; margin-bottom: 3px; }
-        .balance { font-size: 26px; font-weight: bold; color: #ffd700; text-shadow: 0 0 10px rgba(255,215,0,0.5); }
+        .header h1 { font-size: 20px; }
+        .balance { font-size: 26px; font-weight: bold; color: #ffd700; }
         .income { font-size: 12px; color: #aaa; }
-        .energy-bar { background: #2a2a4e; border-radius: 3px; height: 4px; margin: 5px 0; }
-        .energy-fill { background: #4caf50; height: 100%; border-radius: 3px; transition: width 0.3s; }
         .tabs {
             display: flex;
             background: #1a1a3e;
             position: sticky;
-            top: 105px;
+            top: 90px;
             z-index: 99;
             overflow-x: auto;
         }
         .tab {
             flex: 1;
-            min-width: 55px;
-            padding: 10px 5px;
+            min-width: 50px;
+            padding: 10px 4px;
             text-align: center;
             cursor: pointer;
             border-bottom: 3px solid transparent;
@@ -54,17 +50,13 @@
             margin-bottom: 10px;
             border: 1px solid #3a3a6e;
         }
-        .building-card {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .building-emoji { font-size: 36px; min-width: 45px; text-align: center; }
-        .building-info { flex: 1; }
-        .building-name { font-weight: bold; font-size: 14px; }
-        .building-detail { font-size: 11px; color: #aaa; margin-top: 2px; }
-        .building-income { font-size: 12px; color: #4caf50; margin-top: 2px; }
-        .building-cost { font-size: 12px; color: #ffd700; }
+        .row { display: flex; align-items: center; gap: 10px; }
+        .emoji { font-size: 36px; min-width: 45px; text-align: center; }
+        .info { flex: 1; }
+        .name { font-weight: bold; font-size: 14px; }
+        .detail { font-size: 11px; color: #aaa; }
+        .green { color: #4caf50; }
+        .gold { color: #ffd700; }
         .btn {
             background: linear-gradient(135deg, #ffd700, #ffaa00);
             color: #000;
@@ -86,46 +78,34 @@
             left: 15px;
             right: 15px;
             background: linear-gradient(135deg, #4caf50, #2e7d32);
-            color: #fff;
             padding: 16px;
             border-radius: 14px;
             font-size: 18px;
             font-weight: bold;
             text-align: center;
             cursor: pointer;
-            box-shadow: 0 8px 30px rgba(76,175,80,0.4);
             z-index: 90;
         }
-        .floating-text {
+        .float {
             position: fixed;
             font-size: 22px;
-            pointer-events: none;
-            animation: floatUp 1.5s ease-out forwards;
-            z-index: 200;
             font-weight: bold;
+            pointer-events: none;
+            animation: up 1.5s ease-out forwards;
+            z-index: 200;
         }
-        @keyframes floatUp {
-            0% { opacity: 1; transform: translateY(0) scale(1); }
-            100% { opacity: 0; transform: translateY(-180px) scale(0.5); }
+        @keyframes up {
+            0% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-180px); }
         }
         .badge {
             display: inline-block;
-            padding: 3px 8px;
-            border-radius: 10px;
+            padding: 2px 7px;
+            border-radius: 8px;
             font-size: 10px;
             font-weight: bold;
-            margin-left: 5px;
         }
-        .badge-gold { background: #ffd700; color: #000; }
-        .badge-purple { background: #9c27b0; color: #fff; }
-        .badge-red { background: #f44336; color: #fff; }
-        .row { display: flex; gap: 8px; align-items: center; }
-        .shop-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #2a2a4e; }
-        .shop-icon { font-size: 30px; }
-        .shop-info { flex: 1; }
-        .shop-name { font-weight: bold; font-size: 14px; }
-        .shop-desc { font-size: 11px; color: #aaa; }
-        .shop-price { font-size: 13px; color: #ffd700; font-weight: bold; }
+        .badge-purple { background: #9c27b0; }
         .modal {
             display: none;
             position: fixed;
@@ -145,25 +125,22 @@
             text-align: center;
             border: 2px solid #4a2a8e;
         }
-        .modal h2 { margin-bottom: 15px; }
-        .modal .btn { margin: 5px; }
     </style>
 </head>
 <body>
     <div class="header">
         <h1>👑 Бизнес-Империя</h1>
         <div class="balance" id="balance">0 ₽</div>
-        <div class="income" id="income">📊 0 ₽/час | ⚡ <span id="energy">0</span> | ⭐ <span id="level">1</span> ур.</div>
-        <div class="energy-bar"><div class="energy-fill" id="energyBar" style="width:100%"></div></div>
+        <div class="income" id="income">📊 0 ₽/ч | ⚡ <span id="energy">0</span> | ⭐ <span id="level">1</span> ур. | 👑 <span id="prestige">0</span></div>
     </div>
 
-    <div class="tabs" id="tabs">
+    <div class="tabs">
         <div class="tab active" data-tab="build">🏗️ Строить</div>
         <div class="tab" data-tab="my">🏢 Мои</div>
+        <div class="tab" data-tab="tasks">🎯 Задания</div>
         <div class="tab" data-tab="raid">🥷 Налёт</div>
         <div class="tab" data-tab="shop">💎 Магазин</div>
         <div class="tab" data-tab="top">📊 Топ</div>
-        <div class="tab" data-tab="achieve">🏆</div>
     </div>
 
     <div class="content" id="content"></div>
@@ -173,7 +150,7 @@
         <div class="modal-content">
             <h2 id="modalTitle"></h2>
             <p id="modalText"></p>
-            <div id="modalButtons"></div>
+            <button class="btn" onclick="closeModal()">OK</button>
         </div>
     </div>
 
@@ -181,159 +158,131 @@
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-        
         const API = 'https://raft-botany-washed.ngrok-free.dev';
-        let userData = {};
-        let buildings = [];
-        let allBuildings = [];
-        let currentTab = 'build';
+        let userData = {}, buildings = [], allBuildings = [], tasks = [], tab = 'build';
 
         async function api(url) {
-            const res = await fetch(API + url + (url.includes('?') ? '&' : '?') + 'user_id=' + tg.initDataUnsafe.user.id);
-            return await res.json();
+            const r = await fetch(API + url + (url.includes('?')?'&':'?') + 'user_id=' + tg.initDataUnsafe.user.id);
+            return await r.json();
         }
 
-        async function loadData() {
-            const data = await api('/api/data');
-            userData = data.user;
-            buildings = data.buildings;
-            allBuildings = data.all_buildings;
+        async function load() {
+            const d = await api('/api/data');
+            userData = d.user; buildings = d.buildings; allBuildings = d.all_buildings;
+            const t = await api('/api/tasks');
+            tasks = t;
             updateUI();
         }
 
         function updateUI() {
-            document.getElementById('balance').textContent = (userData.balance || 0).toLocaleString() + ' ₽';
-            document.getElementById('income').innerHTML = `📊 ${(userData.income||0).toLocaleString()} ₽/ч | ⚡ ${userData.energy||0} | ⭐ ${userData.level||1} ур.`;
-            document.getElementById('energyBar').style.width = ((userData.energy||0) / (userData.max_energy||100) * 100) + '%';
-            showTab(currentTab);
+            document.getElementById('balance').textContent = (userData.balance||0).toLocaleString() + ' ₽';
+            document.getElementById('income').innerHTML = `📊 ${(userData.income||0).toLocaleString()} ₽/ч | ⚡ ${userData.energy||0} | ⭐ ${userData.level||1} ур. | 👑 ${userData.prestige||0}`;
+            document.getElementById('energy').textContent = userData.energy||0;
+            document.getElementById('level').textContent = userData.level||1;
+            document.getElementById('prestige').textContent = userData.prestige||0;
+            showTab(tab);
         }
 
-        function showTab(tab) {
-            currentTab = tab;
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.querySelector(`[data-tab="${tab}"]`)?.classList.add('active');
-            
+        function showTab(t) {
+            tab = t;
+            document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+            document.querySelector(`[data-tab="${t}"]`)?.classList.add('active');
             const c = document.getElementById('content');
             
-            if (tab === 'build') {
+            if (t === 'build') {
                 c.innerHTML = '<h3>🏗️ Строительство</h3>' + allBuildings.map(b => {
-                    const owned = buildings.find(m => m.type === b.type);
-                    const lvl = owned ? owned.level : 0;
+                    const own = buildings.find(m => m.type === b.type);
+                    const lvl = own ? own.level : 0;
                     const cost = Math.floor(b.base_cost * Math.pow(b.cost_mul, lvl));
                     const inc = Math.floor(b.base_income * Math.pow(b.inc_mul, lvl));
-                    return `<div class="card building-card">
-                        <div class="building-emoji">${b.emoji}</div>
-                        <div class="building-info">
-                            <div class="building-name">${b.name} ${owned ? '<span class="badge badge-purple">ур.'+lvl+'</span>' : ''}</div>
-                            <div class="building-income">📊 ${inc.toLocaleString()} ₽/ч</div>
-                            <div class="building-cost">💰 ${cost.toLocaleString()} ₽</div>
+                    return `<div class="card row">
+                        <div class="emoji">${b.emoji}</div>
+                        <div class="info">
+                            <div class="name">${b.name} ${own ? '<span class="badge badge-purple">ур.'+lvl+'</span>' : ''}</div>
+                            <div class="detail green">📊 ${inc.toLocaleString()} ₽/ч</div>
+                            <div class="detail gold">💰 ${cost.toLocaleString()} ₽</div>
                         </div>
                         <button class="btn" onclick="build('${b.type}')">Построить</button>
                     </div>`;
                 }).join('');
-            } else if (tab === 'my') {
+            } else if (t === 'my') {
                 c.innerHTML = '<h3>🏢 Мои здания</h3>' + (buildings.length === 0 ? '<p style="color:#aaa">Нет зданий</p>' : buildings.map(b => `
-                    <div class="card building-card">
-                        <div class="building-emoji">${b.emoji}</div>
-                        <div class="building-info">
-                            <div class="building-name">${b.name} <span class="badge badge-purple">ур.${b.level}</span></div>
-                            <div class="building-income">📊 ${Math.floor(b.income).toLocaleString()} ₽/ч</div>
+                    <div class="card row">
+                        <div class="emoji">${b.emoji}</div>
+                        <div class="info">
+                            <div class="name">${b.name} <span class="badge badge-purple">ур.${b.level}</span></div>
+                            <div class="detail green">📊 ${Math.floor(b.income).toLocaleString()} ₽/ч</div>
                         </div>
                     </div>
                 `).join(''));
-            } else if (tab === 'raid') {
-                c.innerHTML = `<h3>🥷 Налёт</h3>
-                <div class="card" style="text-align:center">
-                    <p style="font-size:40px">🥷</p>
-                    <p>Совершите налёт на другого игрока!</p>
-                    <p style="color:#aaa;font-size:12px">Шанс успеха: 45% | Стоимость: 20⚡</p>
-                    <p style="color:#aaa;font-size:12px">В случае успеха — до 10% баланса жертвы</p>
-                    <p style="color:#f44336;font-size:12px">Провал — штраф до 5000 ₽</p>
-                    <button class="btn btn-red" onclick="raid()">🥷 СОВЕРШИТЬ НАЛЁТ</button>
-                    <p style="color:#aaa;font-size:11px;margin-top:5px">История налётов появится позже</p>
-                </div>`;
-            } else if (tab === 'shop') {
-                const shop = [
-                    {icon:'⚡',name:'Энергия +50',desc:'Восстановление энергии',price:'10 ⭐',action:'buy_energy'},
-                    {icon:'💰',name:'50 000 ₽',desc:'Мгновенное пополнение',price:'25 ⭐',action:'buy_money'},
-                    {icon:'🛡️',name:'Защита 24ч',desc:'Защита от налётов',price:'50 ⭐',action:'buy_shield'},
-                    {icon:'🌟',name:'VIP на неделю',desc:'Доход x2!',price:'200 ⭐',action:'buy_vip'},
-                ];
-                c.innerHTML = '<h3>💎 Магазин</h3><p style="color:#aaa;font-size:11px">Оплата через Telegram Stars</p>' + shop.map(s => `
-                    <div class="card shop-item">
-                        <div class="shop-icon">${s.icon}</div>
-                        <div class="shop-info">
-                            <div class="shop-name">${s.name}</div>
-                            <div class="shop-desc">${s.desc}</div>
-                        </div>
-                        <div style="text-align:right">
-                            <div class="shop-price">${s.price}</div>
-                            <button class="btn btn-small" onclick="showModal('${s.name}','Оплата через Telegram Stars. Функция в разработке.')">Купить</button>
-                        </div>
+            } else if (t === 'tasks') {
+                const names = {build:'Построить здания',collect:'Собрать доход',raid:'Совершить налёты'};
+                c.innerHTML = '<h3>🎯 Ежедневные задания</h3>' + tasks.map(tsk => `
+                    <div class="card">
+                        <div class="name">${names[tsk.type] || tsk.type}: ${tsk.progress}/${tsk.target}</div>
+                        <div class="detail gold">💰 Награда: ${tsk.reward.toLocaleString()} ₽</div>
+                        ${tsk.done ? '<div class="detail green">✅ Выполнено</div>' : (tsk.progress >= tsk.target ? `<button class="btn btn-small btn-green" onclick="claim(${tsk.id})">Забрать</button>` : `<div class="detail" style="color:#aaa">Выполняйте...</div>`)}
                     </div>
-                `).join('');
-            } else if (tab === 'top') {
-                c.innerHTML = '<h3>📊 Топ-10</h3><p style="color:#aaa">Загрузка...</p>';
+                `).join('') + '<br><button class="btn btn-blue" onclick="prestige()">🔄 Престиж (10M ₽)</button>';
+            } else if (t === 'raid') {
+                c.innerHTML = `<div class="card" style="text-align:center">
+                    <p style="font-size:50px">🥷</p>
+                    <p>Налёт на случайного игрока!</p>
+                    <p style="color:#aaa;font-size:12px">Шанс: 45% | Стоимость: 20⚡</p>
+                    <button class="btn btn-red" onclick="raid()">🥷 СОВЕРШИТЬ НАЛЁТ</button>
+                </div>`;
+            } else if (t === 'shop') {
+                c.innerHTML = '<h3>💎 Магазин (скоро)</h3><p style="color:#aaa">Оплата через Telegram Stars</p>';
+            } else if (t === 'top') {
+                c.innerHTML = '<h3>📊 Загрузка...</h3>';
                 api('/api/top').then(top => {
-                    const medals = ['🥇','🥈','🥉'];
-                    c.innerHTML = '<h3>📊 Топ-10</h3>' + top.map((p, i) => `
-                        <div class="card building-card">
-                            <div class="building-emoji">${medals[i] || '👤'}</div>
-                            <div class="building-info">
-                                <div class="building-name">${p.name || 'Игрок'}</div>
-                                <div class="building-income">💰 ${p.balance.toLocaleString()} ₽ | ⭐ ${p.level} ур.</div>
+                    c.innerHTML = '<h3>📊 Топ-10</h3>' + top.map((p,i) => `
+                        <div class="card row">
+                            <div class="emoji">${['🥇','🥈','🥉'][i] || '👤'}</div>
+                            <div class="info">
+                                <div class="name">${p.name||'Игрок'} ${p.prestige?`👑${p.prestige}`:''}</div>
+                                <div class="detail gold">💰 ${p.balance.toLocaleString()} ₽ | ⭐ ${p.level} ур.</div>
                             </div>
                         </div>
                     `).join('');
                 });
-            } else if (tab === 'achieve') {
-                c.innerHTML = `<h3>🏆 Достижения</h3>
-                <div class="card" style="text-align:center">
-                    <p>🔒 Стройте здания, копите деньги, совершайте налёты — и получайте достижения!</p>
-                </div>`;
             }
         }
 
         async function build(type) {
-            const data = await api('/api/build&type=' + type);
-            if (data.success) {
-                userData = data.user;
-                buildings = data.buildings;
-                showFloat('+🏗️');
-                updateUI();
-            } else {
-                showModal('Ошибка', data.error);
-            }
+            const d = await api('/api/build&type='+type);
+            if (d.success) { userData = d.user; buildings = d.buildings; showFloat('+🏗️'); updateUI(); }
+            else showModal('Ошибка', d.error);
         }
 
         async function collectIncome() {
-            const data = await api('/api/collect');
-            if (data.earned > 0) {
-                userData = data.user;
-                buildings = data.buildings;
-                showFloat('+💰 ' + Math.floor(data.earned).toLocaleString());
-                updateUI();
-            } else {
-                showFloat('⏳ Пока нечего собирать');
-            }
+            const d = await api('/api/collect');
+            if (d.earned > 0) { userData = d.user; buildings = d.buildings; showFloat('+💰 '+Math.floor(d.earned).toLocaleString()); updateUI(); }
+            else showFloat('⏳ Пока нечего');
         }
 
         async function raid() {
-            const data = await api('/api/raid');
-            if (data.success) {
-                userData = data.user;
-                showFloat('🥷 +' + Math.floor(data.stolen).toLocaleString() + ' ₽');
-                updateUI();
-            } else {
-                showModal('Налёт', data.error || 'Не удалось совершить налёт');
-            }
+            const d = await api('/api/raid');
+            if (d.success) { userData = d.user; showFloat('🥷 +'+Math.floor(d.stolen).toLocaleString()); updateUI(); }
+            else showModal('Налёт', d.error);
+        }
+
+        async function claim(tid) {
+            const d = await api('/api/claim_task&task_id='+tid);
+            if (d.success) { userData = d.user; showFloat('+🎯 '+d.reward.toLocaleString()); load(); }
+        }
+
+        async function prestige() {
+            const d = await api('/api/prestige');
+            if (d.success) { userData = d.user; buildings = d.buildings; showFloat('🔄 Престиж!'); updateUI(); showModal('Престиж', `Уровень: ${userData.prestige}\nМножитель дохода: x${(1+0.1*userData.prestige).toFixed(1)}`); }
+            else showModal('Недостаточно', 'Нужно 10 000 000 ₽');
         }
 
         function showFloat(text) {
             const el = document.createElement('div');
-            el.className = 'floating-text';
+            el.className = 'float';
             el.textContent = text;
-            el.style.left = Math.random() * 70 + '%';
+            el.style.left = Math.random()*70+'%';
             el.style.bottom = '120px';
             document.body.appendChild(el);
             setTimeout(() => el.remove(), 1500);
@@ -342,19 +291,13 @@
         function showModal(title, text) {
             document.getElementById('modalTitle').textContent = title;
             document.getElementById('modalText').textContent = text;
-            document.getElementById('modalButtons').innerHTML = '<button class="btn" onclick="closeModal()">OK</button>';
             document.getElementById('modal').classList.add('active');
         }
 
-        function closeModal() {
-            document.getElementById('modal').classList.remove('active');
-        }
+        function closeModal() { document.getElementById('modal').classList.remove('active'); }
 
-        document.querySelectorAll('.tab').forEach(t => {
-            t.addEventListener('click', () => showTab(t.dataset.tab));
-        });
-
-        loadData();
+        document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => showTab(t.dataset.tab)));
+        load();
     </script>
 </body>
 </html>
