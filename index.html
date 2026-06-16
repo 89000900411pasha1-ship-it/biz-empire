@@ -1,260 +1,252 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Бизнес-Империя</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(180deg, #0a0a2e 0%, #1a1a4e 100%);
-            color: #fff;
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
-        .header {
-            background: linear-gradient(135deg, #2a1a5e, #4a2a8e);
-            padding: 15px;
-            text-align: center;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-        }
-        .header h1 { font-size: 22px; margin-bottom: 5px; }
-        .balance {
-            font-size: 28px;
-            font-weight: bold;
-            color: #ffd700;
-            text-shadow: 0 0 10px rgba(255,215,0,0.5);
-        }
-        .income {
-            font-size: 13px;
-            color: #aaa;
-            margin-top: 3px;
-        }
-        .tabs {
-            display: flex;
-            background: #1a1a3e;
-            position: sticky;
-            top: 90px;
-            z-index: 99;
-        }
-        .tab {
-            flex: 1;
-            padding: 12px;
-            text-align: center;
-            cursor: pointer;
-            border-bottom: 3px solid transparent;
-            transition: all 0.3s;
-            font-size: 14px;
-        }
-        .tab.active {
-            border-bottom-color: #ffd700;
-            color: #ffd700;
-        }
-        .content { padding: 15px; padding-bottom: 80px; }
-        .building-card {
-            background: linear-gradient(135deg, #1e1e4e, #2a2a5e);
-            border-radius: 15px;
-            padding: 15px;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            border: 1px solid #3a3a6e;
-            transition: transform 0.2s;
-        }
-        .building-card:active { transform: scale(0.98); }
-        .building-emoji { font-size: 40px; }
-        .building-info { flex: 1; }
-        .building-name { font-weight: bold; font-size: 15px; }
-        .building-level { font-size: 12px; color: #aaa; }
-        .building-income { font-size: 13px; color: #4caf50; }
-        .building-cost { font-size: 13px; color: #ffd700; }
-        .btn {
-            background: linear-gradient(135deg, #ffd700, #ffaa00);
-            color: #000;
-            border: none;
-            padding: 10px 18px;
-            border-radius: 10px;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 13px;
-        }
-        .btn:active { transform: scale(0.95); }
-        .collect-btn {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            right: 20px;
-            background: linear-gradient(135deg, #4caf50, #2e7d32);
-            color: #fff;
-            padding: 18px;
-            border-radius: 15px;
-            font-size: 20px;
-            font-weight: bold;
-            text-align: center;
-            cursor: pointer;
-            box-shadow: 0 8px 30px rgba(76,175,80,0.4);
-            z-index: 90;
-        }
-        .xp-bar {
-            background: #2a2a4e;
-            border-radius: 5px;
-            height: 6px;
-            margin-top: 5px;
-        }
-        .xp-fill {
-            background: linear-gradient(90deg, #ffd700, #ffaa00);
-            height: 100%;
-            border-radius: 5px;
-        }
-        .floating-coin {
-            position: fixed;
-            font-size: 24px;
-            pointer-events: none;
-            animation: floatUp 1.5s ease-out forwards;
-            z-index: 200;
-        }
-        @keyframes floatUp {
-            0% { opacity: 1; transform: translateY(0) scale(1); }
-            100% { opacity: 0; transform: translateY(-200px) scale(0.5); }
-        }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <h1>👑 Бизнес-Империя</h1>
-        <div class="balance" id="balance">0 ₽</div>
-        <div class="income" id="income">📊 0 ₽/час</div>
-        <div class="xp-bar"><div class="xp-fill" id="xpBar" style="width: 0%"></div></div>
-    </div>
+import asyncio
+import sqlite3
+import random
+import json
+from datetime import datetime, timedelta
+from aiogram import Bot, Dispatcher, types, F
+from aiogram.filters import Command
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
+from aiohttp import web
 
-    <div class="tabs">
-        <div class="tab active" onclick="showTab('build')">🏗️ Строить</div>
-        <div class="tab" onclick="showTab('my')">🏢 Мои</div>
-        <div class="tab" onclick="showTab('top')">📊 Топ</div>
-    </div>
+from config import BOT_TOKEN
 
-    <div class="content" id="content"></div>
-    <div class="collect-btn" onclick="collectIncome()">💰 СОБРАТЬ ДОХОД</div>
+bot = Bot(token=BOT_TOKEN)
+dp = Dispatcher()
 
-        <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script>
-        const tg = window.Telegram.WebApp;
-        tg.expand();
-        
-        const API = 'https://raft-botany-washed.ngrok-free.dev';
-        let userData = { balance: 0, income: 0, level: 1, xp: 0 };
-        let buildings = [];
-        let allBuildings = [];
+# ═══════════════════════════ БАЗА ДАННЫХ ═══════════════════════════
+def init_db():
+    conn = sqlite3.connect("game.db")
+    cur = conn.cursor()
+    cur.execute("""CREATE TABLE IF NOT EXISTS users (
+        user_id INTEGER PRIMARY KEY, username TEXT, first_name TEXT,
+        balance REAL DEFAULT 1000, crystals INTEGER DEFAULT 0,
+        income_per_hour REAL DEFAULT 0, level INTEGER DEFAULT 1, xp INTEGER DEFAULT 0,
+        energy INTEGER DEFAULT 100, max_energy INTEGER DEFAULT 100, last_collect TEXT
+    )""")
+    cur.execute("""CREATE TABLE IF NOT EXISTS player_buildings (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, building_type TEXT,
+        level INTEGER DEFAULT 1
+    )""")
+    cur.execute("""CREATE TABLE IF NOT EXISTS building_types (
+        type TEXT PRIMARY KEY, name TEXT, emoji TEXT, base_cost REAL,
+        base_income REAL, cost_multiplier REAL DEFAULT 2.0,
+        income_multiplier REAL DEFAULT 1.5
+    )""")
+    cur.execute("SELECT COUNT(*) FROM building_types")
+    if cur.fetchone()[0] == 0:
+        buildings = [
+            ("stall", "Ларёк", "🏪", 100, 10, 2.0, 1.5),
+            ("shop", "Магазин", "🏬", 500, 50, 2.0, 1.5),
+            ("factory", "Завод", "🏭", 2000, 200, 2.0, 1.5),
+            ("office", "Офис", "🏢", 8000, 500, 2.0, 1.5),
+            ("supermarket", "Супермаркет", "🛒", 20000, 1000, 2.0, 1.5),
+            ("warehouse", "Склад", "🏗️", 50000, 2000, 2.0, 1.5),
+            ("restaurant", "Ресторан", "🍽️", 100000, 5000, 2.0, 1.5),
+            ("mine", "Шахта", "⛏️", 200000, 10000, 2.0, 1.5),
+            ("bank", "Банк", "🏦", 500000, 20000, 2.0, 1.5),
+            ("tower", "Небоскрёб", "🏙️", 1000000, 50000, 2.0, 1.5),
+        ]
+        cur.executemany("INSERT INTO building_types VALUES (?,?,?,?,?,?,?)", buildings)
+        conn.commit()
+    conn.close()
 
-        async function loadData() {
-            const res = await fetch(API + '/api/data?user_id=' + tg.initDataUnsafe.user.id);
-            const data = await res.json();
-            userData = data.user;
-            buildings = data.buildings;
-            allBuildings = data.all_buildings;
-            render();
-        }
+def get_user(user_id):
+    conn = sqlite3.connect("game.db")
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM users WHERE user_id=?", (user_id,))
+    row = cur.fetchone()
+    if not row:
+        cur.execute("INSERT INTO users (user_id) VALUES (?)", (user_id,))
+        conn.commit()
+        cur.execute("SELECT * FROM users WHERE user_id=?", (user_id,))
+        row = cur.fetchone()
+    conn.close()
+    return {
+        "user_id": row[0], "username": row[1], "first_name": row[2],
+        "balance": row[3], "crystals": row[4], "income": row[5],
+        "level": row[6], "xp": row[7], "energy": row[8], "max_energy": row[9],
+        "last_collect": row[10]
+    }
 
-        function render() {
-            document.getElementById('balance').textContent = userData.balance.toLocaleString() + ' ₽';
-            document.getElementById('income').textContent = '📊 ' + userData.income.toLocaleString() + ' ₽/час';
-            document.getElementById('xpBar').style.width = (userData.xp % 100) + '%';
-            showTab('build');
-        }
+def get_buildings(user_id):
+    conn = sqlite3.connect("game.db")
+    cur = conn.cursor()
+    cur.execute("""SELECT pb.building_type, bt.name, bt.emoji, pb.level, bt.base_income, bt.income_multiplier
+        FROM player_buildings pb JOIN building_types bt ON pb.building_type = bt.type
+        WHERE pb.user_id=?""", (user_id,))
+    rows = cur.fetchall()
+    conn.close()
+    return [{"type": r[0], "name": r[1], "emoji": r[2], "level": r[3], "income": r[4] * (r[5] ** (r[3] - 1))} for r in rows]
 
-        function showTab(tab) {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            event.target.classList.add('active');
-            
-            const content = document.getElementById('content');
-            
-            if (tab === 'build') {
-                content.innerHTML = allBuildings.map(b => {
-                    const owned = buildings.find(m => m.type === b.type);
-                    const level = owned ? owned.level : 0;
-                    const cost = Math.floor(b.base_cost * Math.pow(b.cost_mul, level));
-                    const income = Math.floor(b.base_income * Math.pow(b.inc_mul, level));
-                    return `
-                        <div class="building-card" onclick="build('${b.type}')">
-                            <div class="building-emoji">${b.emoji}</div>
-                            <div class="building-info">
-                                <div class="building-name">${b.name} ${owned ? 'ур.'+level : ''}</div>
-                                <div class="building-income">📊 ${income.toLocaleString()} ₽/ч</div>
-                                <div class="building-cost">💰 ${cost.toLocaleString()} ₽</div>
-                            </div>
-                            <button class="btn">Построить</button>
-                        </div>
-                    `;
-                }).join('');
-            } else if (tab === 'my') {
-                content.innerHTML = buildings.length === 0 
-                    ? '<p style="text-align:center;color:#aaa;">🏚️ Нет зданий</p>'
-                    : buildings.map(b => `
-                        <div class="building-card">
-                            <div class="building-emoji">${b.emoji}</div>
-                            <div class="building-info">
-                                <div class="building-name">${b.name}</div>
-                                <div class="building-level">Уровень: ${b.level}</div>
-                                <div class="building-income">📊 ${Math.floor(b.income).toLocaleString()} ₽/ч</div>
-                            </div>
-                        </div>
-                    `).join('');
-            } else if (tab === 'top') {
-                content.innerHTML = '<p style="text-align:center;">📊 Загрузка...</p>';
-                fetch(API + '/api/top').then(r => r.json()).then(top => {
-                    content.innerHTML = top.map((p, i) => `
-                        <div class="building-card">
-                            <div class="building-emoji">${['🥇','🥈','🥉'][i] || '👤'}</div>
-                            <div class="building-info">
-                                <div class="building-name">${p.name || 'Игрок'}</div>
-                                <div class="building-income">💰 ${p.balance.toLocaleString()} ₽</div>
-                            </div>
-                        </div>
-                    `).join('');
-                });
-            }
-        }
+def update_income(user_id):
+    buildings = get_buildings(user_id)
+    total = sum(b["income"] for b in buildings)
+    conn = sqlite3.connect("game.db")
+    cur = conn.cursor()
+    cur.execute("UPDATE users SET income_per_hour=? WHERE user_id=?", (round(total, 2), user_id))
+    conn.commit()
+    conn.close()
 
-        async function build(type) {
-            const res = await fetch(API + '/api/build?user_id=' + tg.initDataUnsafe.user.id + '&type=' + type);
-            const data = await res.json();
-            if (data.success) {
-                userData = data.user;
-                buildings = data.buildings;
-                showCoin('+🏗️');
-                render();
-            } else {
-                alert(data.error);
-            }
-        }
+# ═══════════════════════════ API ═══════════════════════════
+async def api_data(request):
+    user_id = int(request.query.get("user_id", 0))
+    user = get_user(user_id)
+    buildings = get_buildings(user_id)
+    update_income(user_id)
+    user = get_user(user_id)
+    
+    conn = sqlite3.connect("game.db")
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM building_types ORDER BY base_cost")
+    all_buildings = [{"type": r[0], "name": r[1], "emoji": r[2], "base_cost": r[3], "base_income": r[4], "cost_mul": r[5], "inc_mul": r[6]} for r in cur.fetchall()]
+    conn.close()
+    
+    return web.json_response({
+        "user": user,
+        "buildings": buildings,
+        "all_buildings": all_buildings
+    })
 
-        async function collectIncome() {
-            const res = await fetch(API + '/api/collect?user_id=' + tg.initDataUnsafe.user.id);
-            const data = await res.json();
-            if (data.earned > 0) {
-                userData = data.user;
-                buildings = data.buildings;
-                showCoin('+💰 ' + data.earned.toLocaleString());
-                render();
-            }
-        }
+async def api_build(request):
+    user_id = int(request.query.get("user_id", 0))
+    btype = request.query.get("type", "")
+    user = get_user(user_id)
+    
+    conn = sqlite3.connect("game.db")
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM building_types WHERE type=?", (btype,))
+    bt = cur.fetchone()
+    cur.execute("SELECT level FROM player_buildings WHERE user_id=? AND building_type=?", (user_id, btype))
+    existing = cur.fetchone()
+    
+    level = existing[0] if existing else 0
+    cost = bt[3] * (bt[5] ** level)
+    
+    if user["balance"] < cost:
+        conn.close()
+        return web.json_response({"success": False, "error": f"Не хватает {cost - user['balance']:,.0f} ₽"})
+    
+    cur.execute("UPDATE users SET balance=balance-? WHERE user_id=?", (cost, user_id))
+    if existing:
+        cur.execute("UPDATE player_buildings SET level=level+1 WHERE user_id=? AND building_type=?", (user_id, btype))
+    else:
+        cur.execute("INSERT INTO player_buildings (user_id, building_type, level) VALUES (?,?,1)", (user_id, btype))
+    conn.commit()
+    conn.close()
+    
+    update_income(user_id)
+    user = get_user(user_id)
+    buildings = get_buildings(user_id)
+    return web.json_response({"success": True, "user": user, "buildings": buildings})
 
-        function showCoin(text) {
-            const coin = document.createElement('div');
-            coin.className = 'floating-coin';
-            coin.textContent = text;
-            coin.style.left = Math.random() * 80 + '%';
-            coin.style.bottom = '100px';
-            document.body.appendChild(coin);
-            setTimeout(() => coin.remove(), 1500);
-        }
+async def api_collect(request):
+    user_id = int(request.query.get("user_id", 0))
+    user = get_user(user_id)
+    now = datetime.now()
+    last = user["last_collect"]
+    earned = 0
+    
+    if last:
+        last = datetime.fromisoformat(last)
+        hours = (now - last).total_seconds() / 3600
+        earned = min(user["income"] * hours, user["income"] * 24)
+    
+    if earned > 0:
+        conn = sqlite3.connect("game.db")
+        cur = conn.cursor()
+        cur.execute("UPDATE users SET balance=balance+?, last_collect=? WHERE user_id=?", (round(earned, 2), now.isoformat(), user_id))
+        conn.commit()
+        conn.close()
+    
+    user = get_user(user_id)
+    buildings = get_buildings(user_id)
+    return web.json_response({"earned": round(earned, 2), "user": user, "buildings": buildings})
 
-        loadData();
-    </script>
-</body>
-</html>
+async def api_top(request):
+    conn = sqlite3.connect("game.db")
+    cur = conn.cursor()
+    cur.execute("SELECT first_name, balance, level FROM users ORDER BY balance DESC LIMIT 10")
+    rows = cur.fetchall()
+    conn.close()
+    return web.json_response([{"name": r[0] or "Игрок", "balance": r[1], "level": r[2]} for r in rows])
+
+async def api_raid(request):
+    user_id = int(request.query.get("user_id", 0))
+    user = get_user(user_id)
+    
+    if user["energy"] < 20:
+        return web.json_response({"success": False, "error": "Недостаточно энергии! Нужно 20⚡"})
+    
+    conn = sqlite3.connect("game.db")
+    cur = conn.cursor()
+    cur.execute("SELECT user_id, first_name, balance FROM users WHERE user_id!=? AND balance>100 ORDER BY RANDOM() LIMIT 1", (user_id,))
+    target = cur.fetchone()
+    
+    if not target:
+        conn.close()
+        return web.json_response({"success": False, "error": "Нет доступных целей"})
+    
+    success = random.random() < 0.45
+    cur.execute("UPDATE users SET energy=energy-20 WHERE user_id=?", (user_id,))
+    
+    if success:
+        stolen = min(target[2] * 0.1, 100000)
+        cur.execute("UPDATE users SET balance=balance+?, xp=xp+10 WHERE user_id=?", (stolen, user_id))
+        cur.execute("UPDATE users SET balance=balance-? WHERE user_id=?", (stolen, target[0]))
+        conn.commit()
+        conn.close()
+        update_income(user_id)
+        user = get_user(user_id)
+        return web.json_response({"success": True, "stolen": stolen, "user": user})
+    else:
+        fine = random.randint(500, 5000)
+        cur.execute("UPDATE users SET balance=balance-?, xp=xp+2 WHERE user_id=?", (fine, user_id))
+        conn.commit()
+        conn.close()
+        update_income(user_id)
+        user = get_user(user_id)
+        return web.json_response({"success": False, "error": f"Провал! Штраф {fine:,.0f} ₽", "user": user})
+
+# ═══════════════════════════ БОТ ═══════════════════════════
+@dp.message(Command("start"))
+async def start(msg: types.Message):
+    init_db()
+    get_user(msg.from_user.id)
+    
+    kb = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="🎮 ИГРАТЬ", web_app=WebAppInfo(url="https://89000900411pasha1-ship-it.github.io/biz-empire/"))]
+    ])
+    
+    await msg.answer(
+        "👑 <b>БИЗНЕС-ИМПЕРИЯ</b>\n\n"
+        "🏗️ Стройте здания\n"
+        "💰 Получайте пассивный доход\n"
+        "🥷 Совершайте налёты\n"
+        "🏆 Станьте олигархом!\n\n"
+        "👇 Нажмите кнопку, чтобы играть!",
+        reply_markup=kb,
+        parse_mode="HTML"
+    )
+
+# ═══════════════════════════ ЗАПУСК ═══════════════════════════
+async def main():
+    init_db()
+    
+    app = web.Application()
+    app.router.add_get("/api/data", api_data)
+    app.router.add_get("/api/build", api_build)
+    app.router.add_get("/api/collect", api_collect)
+    app.router.add_get("/api/top", api_top)
+    app.router.add_get("/api/raid", api_raid)
+    
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, "0.0.0.0", 8080)
+    await site.start()
+    
+    print("API на порту 8080")
+    print("Бот запущен!")
+    await dp.start_polling(bot)
+
+if __name__ == "__main__":
+    asyncio.run(main())
