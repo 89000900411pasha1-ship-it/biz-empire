@@ -141,17 +141,18 @@
     <div class="content" id="content"></div>
     <div class="collect-btn" onclick="collectIncome()">💰 СОБРАТЬ ДОХОД</div>
 
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+        <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
         
+        const API = 'https://raft-botany-washed.ngrok-free.dev';
         let userData = { balance: 0, income: 0, level: 1, xp: 0 };
         let buildings = [];
         let allBuildings = [];
 
         async function loadData() {
-            const res = await fetch('/api/data?user_id=' + tg.initDataUnsafe.user.id);
+            const res = await fetch(API + '/api/data?user_id=' + tg.initDataUnsafe.user.id);
             const data = await res.json();
             userData = data.user;
             buildings = data.buildings;
@@ -204,8 +205,8 @@
                         </div>
                     `).join('');
             } else if (tab === 'top') {
-                content.innerHTML = '<p style="text-align:center;">📊 Загрузка топа...</p>';
-                fetch('/api/top').then(r => r.json()).then(top => {
+                content.innerHTML = '<p style="text-align:center;">📊 Загрузка...</p>';
+                fetch(API + '/api/top').then(r => r.json()).then(top => {
                     content.innerHTML = top.map((p, i) => `
                         <div class="building-card">
                             <div class="building-emoji">${['🥇','🥈','🥉'][i] || '👤'}</div>
@@ -220,7 +221,7 @@
         }
 
         async function build(type) {
-            const res = await fetch('/api/build?user_id=' + tg.initDataUnsafe.user.id + '&type=' + type);
+            const res = await fetch(API + '/api/build?user_id=' + tg.initDataUnsafe.user.id + '&type=' + type);
             const data = await res.json();
             if (data.success) {
                 userData = data.user;
@@ -233,7 +234,7 @@
         }
 
         async function collectIncome() {
-            const res = await fetch('/api/collect?user_id=' + tg.initDataUnsafe.user.id);
+            const res = await fetch(API + '/api/collect?user_id=' + tg.initDataUnsafe.user.id);
             const data = await res.json();
             if (data.earned > 0) {
                 userData = data.user;
