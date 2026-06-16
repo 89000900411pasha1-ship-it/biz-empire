@@ -154,18 +154,24 @@
         </div>
     </div>
 
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+        <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-        const API = 'http://localhost:5000';
+        const API = 'https://raft-botany-washed.ngrok-free.dev';
         let userData = {}, buildings = [], allBuildings = [], tasks = [], tab = 'build';
 
-            function getUserId() {
+        window.onerror = function(msg, url, line) {
+            alert('Error: ' + msg + ' at line ' + line);
+        };
+        
+        alert('Starting...');
+
+        function getUserId() {
             if (tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id) {
                 return tg.initDataUnsafe.user.id;
             }
-            return 123; // заглушка для тестов
+            return 123;
         }
 
         async function api(url) {
@@ -174,8 +180,9 @@
         }
 
         async function load() {
+            alert('Loading...');
             const d = await api('/api/data');
-            alert('Buildings: ' + JSON.stringify(d.all_buildings ? d.all_buildings.length : 'UNDEFINED'));
+            alert('Buildings: ' + (d.all_buildings ? d.all_buildings.length : 'UNDEFINED'));
             userData = d.user; buildings = d.buildings; allBuildings = d.all_buildings || [];
             const t = await api('/api/tasks');
             tasks = t || [];
@@ -185,9 +192,6 @@
         function updateUI() {
             document.getElementById('balance').textContent = (userData.balance||0).toLocaleString() + ' ₽';
             document.getElementById('income').innerHTML = `📊 ${(userData.income||0).toLocaleString()} ₽/ч | ⚡ ${userData.energy||0} | ⭐ ${userData.level||1} ур. | 👑 ${userData.prestige||0}`;
-            document.getElementById('energy').textContent = userData.energy||0;
-            document.getElementById('level').textContent = userData.level||1;
-            document.getElementById('prestige').textContent = userData.prestige||0;
             showTab(tab);
         }
 
@@ -198,19 +202,23 @@
             const c = document.getElementById('content');
             
             if (t === 'build') {
+                if (!allBuildings || allBuildings.length === 0) {
+                    c.innerHTML = '<p style="color:#aaa">Загрузка зданий...</p>';
+                    return;
+                }
                 c.innerHTML = '<h3>🏗️ Строительство</h3>' + allBuildings.map(b => {
                     const own = buildings.find(m => m.type === b.type);
                     const lvl = own ? own.level : 0;
                     const cost = Math.floor(b.base_cost * Math.pow(b.cost_mul, lvl));
                     const inc = Math.floor(b.base_income * Math.pow(b.inc_mul, lvl));
-                    return `<div class="card row">
+                    return `<div class="card row" onclick="build('${b.type}')">
                         <div class="emoji">${b.emoji}</div>
                         <div class="info">
                             <div class="name">${b.name} ${own ? '<span class="badge badge-purple">ур.'+lvl+'</span>' : ''}</div>
                             <div class="detail green">📊 ${inc.toLocaleString()} ₽/ч</div>
                             <div class="detail gold">💰 ${cost.toLocaleString()} ₽</div>
                         </div>
-                        <button class="btn" onclick="build('${b.type}')">Построить</button>
+                        <button class="btn">Построить</button>
                     </div>`;
                 }).join('');
             } else if (t === 'my') {
@@ -282,7 +290,7 @@
 
         async function prestige() {
             const d = await api('/api/prestige');
-            if (d.success) { userData = d.user; buildings = d.buildings; showFloat('🔄 Престиж!'); updateUI(); showModal('Престиж', `Уровень: ${userData.prestige}\nМножитель дохода: x${(1+0.1*userData.prestige).toFixed(1)}`); }
+            if (d.success) { userData = d.user; buildings = d.buildings; showFloat('🔄 Престиж!'); updateUI(); showModal('Престиж', `Уровень: ${userData.prestige}\nМножитель: x${(1+0.1*userData.prestige).toFixed(1)}`); }
             else showModal('Недостаточно', 'Нужно 10 000 000 ₽');
         }
 
