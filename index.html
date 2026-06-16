@@ -179,18 +179,12 @@
             return await r.json();
         }
 
-        async function load() {
+                async function load() {
             alert('Loading...');
-            try {
-                const d = await api('/api/data');
-                alert('API OK: ' + JSON.stringify(d).substring(0, 100));
-                userData = d.user; buildings = d.buildings; allBuildings = d.all_buildings || [];
-                const t = await api('/api/tasks');
-                tasks = t || [];
-                updateUI();
-            } catch(e) {
-                alert('Error in load: ' + e.message);
-            }
+            fetch(API + '/api/data?user_id=123')
+                .then(r => r.json())
+                .then(d => alert('OK: ' + d.all_buildings.length + ' buildings'))
+                .catch(e => alert('Fetch error: ' + e.message));
         }
 
         function updateUI() {
