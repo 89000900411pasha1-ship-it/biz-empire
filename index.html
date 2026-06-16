@@ -161,8 +161,15 @@
         const API = 'https://raft-botany-washed.ngrok-free.dev';
         let userData = {}, buildings = [], allBuildings = [], tasks = [], tab = 'build';
 
+            function getUserId() {
+            if (tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id) {
+                return tg.initDataUnsafe.user.id;
+            }
+            return 123; // заглушка для тестов
+        }
+
         async function api(url) {
-            const r = await fetch(API + url + (url.includes('?')?'&':'?') + 'user_id=' + tg.initDataUnsafe.user.id);
+            const r = await fetch(API + url + (url.includes('?')?'&':'?') + 'user_id=' + getUserId());
             return await r.json();
         }
 
