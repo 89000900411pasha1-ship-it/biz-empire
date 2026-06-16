@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Бизнес-Империя</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(180deg, #0a0a2e 0%, #1a1a4e 100%);
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #2a1a5e, #4a2a8e);
+            padding: 15px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+        .header h1 { font-size: 22px; margin-bottom: 5px; }
+        .balance {
+            font-size: 28px;
+            font-weight: bold;
+            color: #ffd700;
+            text-shadow: 0 0 10px rgba(255,215,0,0.5);
+        }
+        .income {
+            font-size: 13px;
+            color: #aaa;
+            margin-top: 3px;
+        }
+        .tabs {
+            display: flex;
+            background: #1a1a3e;
+            position: sticky;
+            top: 90px;
+            z-index: 99;
+        }
+        .tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+        .tab.active {
+            border-bottom-color: #ffd700;
+            color: #ffd700;
+        }
+        .content { padding: 15px; padding-bottom: 80px; }
+        .building-card {
+            background: linear-gradient(135deg, #1e1e4e, #2a2a5e);
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border: 1px solid #3a3a6e;
+            transition: transform 0.2s;
+        }
+        .building-card:active { transform: scale(0.98); }
+        .building-emoji { font-size: 40px; }
+        .building-info { flex: 1; }
+        .building-name { font-weight: bold; font-size: 15px; }
+        .building-level { font-size: 12px; color: #aaa; }
+        .building-income { font-size: 13px; color: #4caf50; }
+        .building-cost { font-size: 13px; color: #ffd700; }
+        .btn {
+            background: linear-gradient(135deg, #ffd700, #ffaa00);
+            color: #000;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .btn:active { transform: scale(0.95); }
+        .collect-btn {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #4caf50, #2e7d32);
+            color: #fff;
+            padding: 18px;
+            border-radius: 15px;
+            font-size: 20px;
+            font-weight: bold;
+            text-align: center;
+            cursor: pointer;
+            box-shadow: 0 8px 30px rgba(76,175,80,0.4);
+            z-index: 90;
+        }
+        .xp-bar {
+            background: #2a2a4e;
+            border-radius: 5px;
+            height: 6px;
+            margin-top: 5px;
+        }
+        .xp-fill {
+            background: linear-gradient(90deg, #ffd700, #ffaa00);
+            height: 100%;
+            border-radius: 5px;
+        }
+        .floating-coin {
+            position: fixed;
+            font-size: 24px;
+            pointer-events: none;
+            animation: floatUp 1.5s ease-out forwards;
+            z-index: 200;
+        }
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-200px) scale(0.5); }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>👑 Бизнес-Империя</h1>
+        <div class="balance" id="balance">0 ₽</div>
+        <div class="income" id="income">📊 0 ₽/час</div>
+        <div class="xp-bar"><div class="xp-fill" id="xpBar" style="width: 0%"></div></div>
+    </div>
+
+    <div class="tabs">
+        <div class="tab active" onclick="showTab('build')">🏗️ Строить</div>
+        <div class="tab" onclick="showTab('my')">🏢 Мои</div>
+        <div class="tab" onclick="showTab('top')">📊 Топ</div>
+    </div>
+
+    <div class="content" id="content"></div>
+    <div class="collect-btn" onclick="collectIncome()">💰 СОБРАТЬ ДОХОД</div>
+
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        
+        let userData = { balance: 0, income: 0, level: 1, xp: 0 };
+        let buildings = [];
+        let allBuildings = [];
+
+        async function loadData() {
+            const res = await fetch('/api/data?user_id=' + tg.initDataUnsafe.user.id);
+            const data = await res.json();
+            userData = data.user;
+            buildings = data.buildings;
+            allBuildings = data.all_buildings;
+            render();
+        }
+
+        function render() {
+            document.getElementById('balance').textContent = userData.balance.toLocaleString() + ' ₽';
+            document.getElementById('income').textContent = '📊 ' + userData.income.toLocaleString() + ' ₽/час';
+            document.getElementById('xpBar').style.width = (userData.xp % 100) + '%';
+            showTab('build');
+        }
+
+        function showTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            const content = document.getElementById('content');
+            
+            if (tab === 'build') {
+                content.innerHTML = allBuildings.map(b => {
+                    const owned = buildings.find(m => m.type === b.type);
+                    const level = owned ? owned.level : 0;
+                    const cost = Math.floor(b.base_cost * Math.pow(b.cost_mul, level));
+                    const income = Math.floor(b.base_income * Math.pow(b.inc_mul, level));
+                    return `
+                        <div class="building-card" onclick="build('${b.type}')">
+                            <div class="building-emoji">${b.emoji}</div>
+                            <div class="building-info">
+                                <div class="building-name">${b.name} ${owned ? 'ур.'+level : ''}</div>
+                                <div class="building-income">📊 ${income.toLocaleString()} ₽/ч</div>
+                                <div class="building-cost">💰 ${cost.toLocaleString()} ₽</div>
+                            </div>
+                            <button class="btn">Построить</button>
+                        </div>
+                    `;
+                }).join('');
+            } else if (tab === 'my') {
+                content.innerHTML = buildings.length === 0 
+                    ? '<p style="text-align:center;color:#aaa;">🏚️ Нет зданий</p>'
+                    : buildings.map(b => `
+                        <div class="building-card">
+                            <div class="building-emoji">${b.emoji}</div>
+                            <div class="building-info">
+                                <div class="building-name">${b.name}</div>
+                                <div class="building-level">Уровень: ${b.level}</div>
+                                <div class="building-income">📊 ${Math.floor(b.income).toLocaleString()} ₽/ч</div>
+                            </div>
+                        </div>
+                    `).join('');
+            } else if (tab === 'top') {
+                content.innerHTML = '<p style="text-align:center;">📊 Загрузка топа...</p>';
+                fetch('/api/top').then(r => r.json()).then(top => {
+                    content.innerHTML = top.map((p, i) => `
+                        <div class="building-card">
+                            <div class="building-emoji">${['🥇','🥈','🥉'][i] || '👤'}</div>
+                            <div class="building-info">
+                                <div class="building-name">${p.name || 'Игрок'}</div>
+                                <div class="building-income">💰 ${p.balance.toLocaleString()} ₽</div>
+                            </div>
+                        </div>
+                    `).join('');
+                });
+            }
+        }
+
+        async function build(type) {
+            const res = await fetch('/api/build?user_id=' + tg.initDataUnsafe.user.id + '&type=' + type);
+            const data = await res.json();
+            if (data.success) {
+                userData = data.user;
+                buildings = data.buildings;
+                showCoin('+🏗️');
+                render();
+            } else {
+                alert(data.error);
+            }
+        }
+
+        async function collectIncome() {
+            const res = await fetch('/api/collect?user_id=' + tg.initDataUnsafe.user.id);
+            const data = await res.json();
+            if (data.earned > 0) {
+                userData = data.user;
+                buildings = data.buildings;
+                showCoin('+💰 ' + data.earned.toLocaleString());
+                render();
+            }
+        }
+
+        function showCoin(text) {
+            const coin = document.createElement('div');
+            coin.className = 'floating-coin';
+            coin.textContent = text;
+            coin.style.left = Math.random() * 80 + '%';
+            coin.style.bottom = '100px';
+            document.body.appendChild(coin);
+            setTimeout(() => coin.remove(), 1500);
+        }
+
+        loadData();
+    </script>
+</body>
+</html>
