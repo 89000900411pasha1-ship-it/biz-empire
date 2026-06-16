@@ -174,8 +174,8 @@
         }
 
         async function load() {
-            alert('User ID: ' + getUserId());
             const d = await api('/api/data');
+            alert('Buildings: ' + JSON.stringify(d.all_buildings ? d.all_buildings.length : 'UNDEFINED'));
             userData = d.user; buildings = d.buildings; allBuildings = d.all_buildings || [];
             const t = await api('/api/tasks');
             tasks = t || [];
