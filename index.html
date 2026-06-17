@@ -120,12 +120,24 @@
                         <div class="info">
                             <div class="name">${s.name} <span class="rarity-${s.rarity}">[${s.rarity}]</span></div>
                             <div class="detail">Множитель: x${s.multiplier}</div>
-                            ${s.listed ? `<div class="gold">В продаже за ${s.price} TON</div>` : ''}
+                            ${s.listed ? `<div class="gold">В продаже за ${s.price} TON</div>` : `<button class="btn btn-sm btn-purple" onclick="sellSkin(${s.id})">Продать</button>`}
                         </div>
                     </div>
                 `).join(''));
             } else if (t === 'market') {
-                c.innerHTML = '<h3>💱 Маркет (скоро)</h3><p style="color:#aaa">Покупка и продажа скинов между игроками</p>';
+                api('/api/market').then(items => {
+                    c.innerHTML = '<h3>💱 Маркет</h3>' + (items.length===0?'<p style="color:#aaa">Нет предложений</p>':items.map(i => `
+                        <div class="card">
+                            <div class="emoji-big">${i.emoji}</div>
+                            <div class="info">
+                                <div class="name">${i.name} <span class="rarity-${i.rarity}">[${i.rarity}]</span></div>
+                                <div class="detail">Продавец: ${i.seller} | Множитель: x${i.multiplier}</div>
+                                <div class="gold">💎 ${i.price} TON</div>
+                            </div>
+                            <button class="btn btn-sm" onclick="buySkin(${i.id})">Купить</button>
+                        </div>
+                    `).join(''));
+                });
             } else if (t === 'top') {
                 api('/api/top_tappers').then(top => {
                     c.innerHTML = '<h3>🏆 Топ таперов</h3>' + top.map((p,i) => `
@@ -173,6 +185,20 @@
                     alert('Кошелёк привязан!');
                 }
             }
+        }
+
+        async function sellSkin(invId) {
+            const price = prompt('Цена в TON:');
+            if (price && parseFloat(price) > 0) {
+                const d = await api('/api/sell_skin?inv_id=' + invId + '&price=' + price);
+                if (d.success) { load(); showFloat('📤 Выставлено!'); }
+            }
+        }
+        
+        async function buySkin(invId) {
+            const d = await api('/api/buy_skin?inv_id=' + invId);
+            if (d.success) { userData = d.user; load(); showFloat('📥 Куплено!'); }
+            else alert(d.error);
         }
 
         function showFloat(text) {
