@@ -89,12 +89,17 @@
         }
         async function tap(){ const d=await api('/api/tap'); if(d.coins_earned){ userData=d.user; document.getElementById('coinBalance').textContent=Math.floor(userData.balance_coins||0).toLocaleString(); document.getElementById('totalTaps').textContent=(userData.total_taps||0).toLocaleString(); document.getElementById('level').textContent=userData.level||1; showFloat('+'+d.coins_earned+'🪙'); } }
         async function openBox(boxId){ const d=await api('/api/open_box?box_id='+boxId); if(d.success){ userData=d.user; document.getElementById('tonBalance').textContent=(userData.balance_ton||0).toFixed(1); showFloat(d.skin.emoji+' '+d.skin.name+'!'); load(); } else alert(d.error); }
-        async function connectTonWallet(){
-            const connector = new TonConnectSDK.TonConnect({manifestUrl:'https://89000900411pasha1-ship-it.github.io/biz-empire/tonconnect-manifest.json'});
-            const walletsList = await connector.getWallets();
-            const tonkeeper = walletsList.find(w=>w.name==='Tonkeeper');
-            if(tonkeeper){ connector.connect({jsBridgeKey:tonkeeper.jsBridgeKey}); const unsubscribe=connector.onStatusChange(async(wallet)=>{if(wallet){const address=wallet.account.address;const d=await api('/api/connect_wallet?address='+address);if(d.success){document.getElementById('walletBtn').textContent='✅ '+address.substring(0,8)+'...';alert('Кошелёк подключён!');}}unsubscribe();}); }
-            else { alert('Установите Tonkeeper'); }
+                async function connectTonWallet() {
+            const address = prompt('Введите адрес вашего TON кошелька (из Tonkeeper):\nНачинается с UQ или EQ');
+            if (address && (address.startsWith('UQ') || address.startsWith('EQ'))) {
+                const d = await api('/api/connect_wallet?address=' + address);
+                if (d.success) {
+                    document.getElementById('walletBtn').textContent = '✅ ' + address.substring(0,8) + '...';
+                    alert('Кошелёк привязан!');
+                }
+            } else {
+                alert('Неверный адрес кошелька. Должен начинаться с UQ или EQ');
+            }
         }
         async function connectWallet(){ const address=prompt('Введите адрес вашего TON кошелька:'); if(address){ const d=await api('/api/connect_wallet?address='+address); if(d.success){ document.getElementById('walletBtn').textContent='✅ '+address.substring(0,8)+'...'; alert('Кошелёк привязан!'); } } }
         async function sellSkin(invId){ const price=prompt('Цена в TON:'); if(price&&parseFloat(price)>0){ const d=await api('/api/sell_skin?inv_id='+invId+'&price='+price); if(d.success){ load(); showFloat('📤 Выставлено!'); } } }
