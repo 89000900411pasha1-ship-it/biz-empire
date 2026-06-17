@@ -14,7 +14,7 @@
         .stats span { margin: 0 3px; }
         .xp-bar { background: #2a2a4e; border-radius: 5px; height: 6px; margin: 6px 0 2px; overflow: hidden; }
         .xp-fill { background: linear-gradient(90deg, #ffd700, #ffaa00); height: 100%; border-radius: 5px; transition: width 0.5s ease; }
-        .tabs { display: flex; background: #1a1a3e; position: sticky; top: 110px; z-index: 99; overflow-x: auto; }
+        .tabs { display: flex; background: #1a1a3e; position: sticky; top: 115px; z-index: 99; overflow-x: auto; }
         .tab { flex: 1; min-width: 40px; padding: 8px 3px; text-align: center; cursor: pointer; border-bottom: 3px solid transparent; font-size: 10px; white-space: nowrap; }
         .tab.active { border-bottom-color: #ffd700; color: #ffd700; }
         .content { padding: 10px; padding-bottom: 100px; }
@@ -25,6 +25,7 @@
         .desc { font-size: 11px; color: #aaa; }
         .green { color: #4caf50; font-size: 12px; }
         .gold { color: #ffd700; font-size: 12px; }
+        .red { color: #f44336; font-size: 12px; }
         .btn { background: linear-gradient(135deg, #ffd700, #ffaa00); color: #000; border: none; padding: 8px 14px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 12px; }
         .btn:active { transform: scale(0.95); }
         .btn-sm { padding: 5px 10px; font-size: 11px; }
@@ -36,10 +37,13 @@
         .badge-purple { background: #9c27b0; }
         .badge-gold { background: #ffd700; color: #000; }
         .badge-red { background: #f44336; }
+        .badge-green { background: #4caf50; }
         .float { position: fixed; font-size: 22px; font-weight: bold; pointer-events: none; animation: up 1.5s ease-out forwards; z-index: 200; }
         @keyframes up { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-180px); } }
         .locked { opacity: 0.5; filter: grayscale(1); }
         .avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; }
+        .event-badge { position: fixed; top: 80px; right: 10px; background: #ff5722; color: #fff; padding: 5px 10px; border-radius: 10px; font-size: 11px; z-index: 150; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.7; } }
     </style>
 </head>
 <body>
@@ -52,13 +56,15 @@
             <span id="shieldBadge" style="display:none" class="badge badge-red">🛡️</span>
         </div>
         <div class="xp-bar"><div class="xp-fill" id="xpBar" style="width:0%"></div></div>
-        <div style="font-size:10px;color:#aaa"><span id="xpText">0</span> / <span id="xpNeed">50</span> XP</div>
+        <div style="font-size:10px;color:#aaa"><span id="xpText">0</span> / <span id="xpNeed">52</span> XP</div>
     </div>
+    <div id="eventBanner"></div>
 
     <div class="tabs">
         <div class="tab active" data-tab="build">🏗️</div>
         <div class="tab" data-tab="my">🏢</div>
         <div class="tab" data-tab="tasks">🎯</div>
+        <div class="tab" data-tab="quests">📜</div>
         <div class="tab" data-tab="raid">🥷</div>
         <div class="tab" data-tab="shop">💎</div>
         <div class="tab" data-tab="achieve">🏆</div>
@@ -68,7 +74,7 @@
     <div class="content" id="content"></div>
     <div class="collect-btn" onclick="collectIncome()">💰 СОБРАТЬ ДОХОД</div>
 
-            <script>
+    <script>
         function getUserId() {
             if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
                 return window.Telegram.WebApp.initDataUnsafe.user.id;
@@ -111,6 +117,15 @@
             document.getElementById('xpBar').style.width = Math.min(100, (xp / xpNeed) * 100) + '%';
             document.getElementById('xpText').textContent = xp;
             document.getElementById('xpNeed').textContent = xpNeed;
+
+            // Баннер события
+            const eb = document.getElementById('eventBanner');
+            if (userData.event_type && userData.event_until && userData.event_until > new Date().toISOString()) {
+                const names = {boom:'📈 Бум рынка! Доход x2', fire:'🔥 Пожар!', party:'🎉 Праздник!', tax:'🚔 Налоговая проверка!'};
+                eb.innerHTML = `<div class="event-badge">${names[userData.event_type] || userData.event_type}</div>`;
+            } else {
+                eb.innerHTML = '';
+            }
             
             showTab(tab);
         }
@@ -145,9 +160,14 @@
                 `).join(''));
             } else if (t === 'tasks') {
                 const names = {build:'Построить',collect:'Собрать',raid:'Налёты'};
-                c.innerHTML = '<h3>🎯 Задания</h3>' + tasks.map(tsk => `
+                c.innerHTML = '<h3>🎯 Ежедневные задания</h3>' + tasks.map(tsk => `
                     <div class="card"><div class="info"><div class="name">${names[tsk.type]}: ${tsk.progress}/${tsk.target}</div><div class="gold">💰 ${tsk.reward.toLocaleString()} ₽</div>${tsk.done?'<div class="green">✅</div>':((tsk.progress>=tsk.target&&tsk.progress>0)?`<button class="btn btn-sm" onclick="claim(${tsk.id})">Забрать</button>`:'<div style="color:#aaa">Выполняйте</div>')}</div></div>
-                `).join('') + '<br><button class="btn btn-blue" onclick="dailyBonus()">🎁 Ежедневный бонус</button><br><br><button class="btn btn-blue" onclick="prestige()">🔄 Престиж (10M ₽)</button>';
+                `).join('') + '<br><button class="btn btn-green" onclick="dailyBonus()">🎁 Ежедневный бонус</button><br><br><button class="btn btn-blue" onclick="prestige()">🔄 Престиж (10M ₽)</button>';
+            } else if (t === 'quests') {
+                const names = {build:'Построить',collect:'Собрать',raid:'Налёты'};
+                c.innerHTML = '<h3>📜 Квесты</h3>' + (quests.length===0?'<p style="color:#aaa">Нет активных квестов</p>':quests.map(q => `
+                    <div class="card"><div class="info"><div class="name">${names[q.type]}: ${q.progress}/${q.target}</div><div class="gold">💰 ${q.reward.toLocaleString()} ₽ + ${q.crystals||0}💎</div>${q.progress>=q.target?`<button class="btn btn-sm" onclick="claimQuest(${q.id})">Забрать</button>`:`<div style="color:#aaa">До: ${new Date(q.expires).toLocaleTimeString()}</div>`}</div></div>
+                `).join(''));
             } else if (t === 'raid') {
                 c.innerHTML = `<div class="card" style="text-align:center;flex-direction:column"><p style="font-size:50px">🥷</p><p>Налёт на игрока! Шанс: 45% | 20⚡</p><button class="btn btn-red" onclick="raid()">СОВЕРШИТЬ НАЛЁТ</button></div>`;
             } else if (t === 'shop') {
@@ -195,14 +215,16 @@
             for (const tsk of tasks) { 
                 if (!tsk.done && tsk.progress >= tsk.target && tsk.progress > 0) { 
                     const cd = await api('/api/claim_task?task_id=' + tsk.id); 
-                    if (cd.success) { 
-                        userData = cd.user; 
-                        showFloat('+🎯 ' + cd.reward.toLocaleString() + ' +50XP'); 
-                    }
+                    if (cd.success) { userData = cd.user; showFloat('+🎯 ' + cd.reward.toLocaleString() + ' +50XP'); }
                 }
             }
-            await load(); 
-            updateUI(); 
+            for (const q of quests) {
+                if (q.progress >= q.target) {
+                    const cd = await api('/api/claim_quest?quest_id=' + q.id);
+                    if (cd.success) { userData = cd.user; showFloat('+📜 ' + cd.reward.toLocaleString() + '₽'); }
+                }
+            }
+            await load(); updateUI(); 
         }
 
         async function dailyBonus() {
@@ -213,6 +235,7 @@
 
         async function raid() { const d=await api('/api/raid'); if(d.success){ userData=d.user; showFloat('🥷 +'+Math.floor(d.stolen).toLocaleString()+' +15XP'); updateUI(); } else alert(d.error) }
         async function claim(tid) { const d=await api('/api/claim_task?task_id='+tid); if(d.success){ userData=d.user; load(); } }
+        async function claimQuest(qid) { const d=await api('/api/claim_quest?quest_id='+qid); if(d.success){ userData=d.user; showFloat('+📜 ' + d.reward.toLocaleString() + '₽'); load(); } }
         async function prestige() { const d=await api('/api/prestige'); if(d.success){ userData=d.user; buildings=d.buildings; showFloat('🔄 Престиж!'); updateUI(); } else alert('Нужно 10 000 000 ₽') }
         async function buy(item) { const d=await api('/api/buy_'+item); if(d.success){ userData=d.user; updateUI(); showFloat('+🛒') } else alert('Недостаточно кристаллов!') }
         function showFloat(text) { const el=document.createElement('div'); el.className='float'; el.textContent=text; el.style.left=Math.random()*70+'%'; el.style.bottom='120px'; document.body.appendChild(el); setTimeout(()=>el.remove(),1500) }
