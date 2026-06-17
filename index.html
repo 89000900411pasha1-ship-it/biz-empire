@@ -68,7 +68,7 @@
     <div class="content" id="content"></div>
     <div class="collect-btn" onclick="collectIncome()">💰 СОБРАТЬ ДОХОД</div>
 
-        <script>
+            <script>
         function getUserId() {
             if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
                 return window.Telegram.WebApp.initDataUnsafe.user.id;
@@ -78,7 +78,7 @@
 
         const API = 'https://pashsasd.pythonanywhere.com';
         let uid = getUserId();
-        let userData = {}, buildings = [], allBuildings = [], tasks = [], achievements = [], tab = 'build';
+        let userData = {}, buildings = [], allBuildings = [], tasks = [], achievements = [], quests = [], tab = 'build';
 
         async function api(url) {
             const sep = url.includes('?') ? '&' : '?';
@@ -89,7 +89,7 @@
         async function load() {
             const d = await api('/api/data');
             userData = d.user; buildings = d.buildings; allBuildings = d.all_buildings || [];
-            achievements = d.achievements || [];
+            achievements = d.achievements || []; quests = d.quests || [];
             const t = await api('/api/tasks');
             tasks = t || [];
             updateUI();
@@ -107,7 +107,7 @@
             
             const xp = userData.xp || 0;
             const level = userData.level || 1;
-            const xpNeed = level * 50;
+            const xpNeed = level * 50 + level * level * 2;
             document.getElementById('xpBar').style.width = Math.min(100, (xp / xpNeed) * 100) + '%';
             document.getElementById('xpText').textContent = xp;
             document.getElementById('xpNeed').textContent = xpNeed;
@@ -147,7 +147,7 @@
                 const names = {build:'Построить',collect:'Собрать',raid:'Налёты'};
                 c.innerHTML = '<h3>🎯 Задания</h3>' + tasks.map(tsk => `
                     <div class="card"><div class="info"><div class="name">${names[tsk.type]}: ${tsk.progress}/${tsk.target}</div><div class="gold">💰 ${tsk.reward.toLocaleString()} ₽</div>${tsk.done?'<div class="green">✅</div>':((tsk.progress>=tsk.target&&tsk.progress>0)?`<button class="btn btn-sm" onclick="claim(${tsk.id})">Забрать</button>`:'<div style="color:#aaa">Выполняйте</div>')}</div></div>
-                `).join('') + '<br><button class="btn btn-blue" onclick="prestige()">🔄 Престиж (10M ₽)</button>';
+                `).join('') + '<br><button class="btn btn-blue" onclick="dailyBonus()">🎁 Ежедневный бонус</button><br><br><button class="btn btn-blue" onclick="prestige()">🔄 Престиж (10M ₽)</button>';
             } else if (t === 'raid') {
                 c.innerHTML = `<div class="card" style="text-align:center;flex-direction:column"><p style="font-size:50px">🥷</p><p>Налёт на игрока! Шанс: 45% | 20⚡</p><button class="btn btn-red" onclick="raid()">СОВЕРШИТЬ НАЛЁТ</button></div>`;
             } else if (t === 'shop') {
@@ -203,6 +203,12 @@
             }
             await load(); 
             updateUI(); 
+        }
+
+        async function dailyBonus() {
+            const d = await api('/api/daily_bonus');
+            if (d.success) { userData = d.user; showFloat('🎁 День ' + d.day + ': +' + d.money.toLocaleString() + '₽ +' + (d.crystals||0) + '💎'); updateUI(); }
+            else alert(d.error || 'Уже получено сегодня');
         }
 
         async function raid() { const d=await api('/api/raid'); if(d.success){ userData=d.user; showFloat('🥷 +'+Math.floor(d.stolen).toLocaleString()+' +15XP'); updateUI(); } else alert(d.error) }
