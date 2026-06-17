@@ -68,7 +68,7 @@
             document.getElementById('totalTaps').textContent = (userData.total_taps||0).toLocaleString();
             if(userData.wallet_address) document.getElementById('walletBtn').textContent = '✅ '+userData.wallet_address.substring(0,8)+'...';
             const inv = await api('/api/inventory'); inventory = inv;
-            const maxMul = Math.max(1.0,...inv.filter(i=>!i.listed).map(i=>i.multiplier));
+            const maxMul = Math.max(1.0,...inv.filter(i=>!i.listed&&!i.staked).map(i=>i.multiplier));
             document.getElementById('multiplier').textContent = maxMul.toFixed(1);
             showTab(tab);
         }
@@ -78,7 +78,7 @@
             document.querySelector('[data-tab="'+t+'"]')?.classList.add('active');
             const c = document.getElementById('content');
             if(t==='boxes'){ api('/api/boxes').then(boxes=>{ c.innerHTML='<h3>📦 Боксы</h3>'+boxes.map(b=>`<div class="card" onclick="openBox(${b.id})"><div class="emoji-big">${b.emoji}</div><div class="info"><div class="name">${b.name}</div><div class="detail">${b.desc}</div><div class="gold">💎 ${b.price_ton} TON</div></div><button class="btn btn-sm">Открыть</button></div>`).join(''); }); }
-            else if(t==='inventory'){ c.innerHTML='<h3>🎒 Мои скины</h3>'+(inventory.length===0?'<p style="color:#aaa">Нет скинов</p>':inventory.map(s=>`<div class="card"><div class="emoji-big">${s.emoji}</div><div class="info"><div class="name">${s.name} <span class="rarity-${s.rarity}">[${s.rarity}]</span></div><div class="detail">Множитель: x${s.multiplier} | Уровень: ${s.upgrade||0}</div>${s.listed?`<div class="gold">В продаже за ${s.price} TON</div>`:`<button class="btn btn-sm btn-purple" onclick="sellSkin(${s.id})">Продать</button> <button class="btn btn-sm btn-blue" onclick="upgradeSkin(${s.id})">Улучшить</button>`}</div></div>`).join('')); }
+            else if(t==='inventory'){ c.innerHTML='<h3>🎒 Мои скины</h3>'+(inventory.length===0?'<p style="color:#aaa">Нет скинов</p>':inventory.map(s=>`<div class="card"><div class="emoji-big">${s.emoji}</div><div class="info"><div class="name">${s.name} <span class="rarity-${s.rarity}">[${s.rarity}]</span></div><div class="detail">Множитель: x${s.multiplier} | Уровень: ${s.upgrade||0} ${s.staked?'🔒 Стейк':''}</div>${s.listed?`<div class="gold">В продаже за ${s.price} TON</div>`:`<button class="btn btn-sm btn-purple" onclick="sellSkin(${s.id})">Продать</button> <button class="btn btn-sm btn-blue" onclick="upgradeSkin(${s.id})">Улучшить</button> <button class="btn btn-sm" onclick="stakeSkin(${s.id})">💰 Стейк</button> ${s.staked?`<button class="btn btn-sm btn-blue" onclick="claimStake(${s.id})">Забрать</button>`:''}`}</div></div>`).join('')); }
             else if(t==='market'){ api('/api/market').then(items=>{ c.innerHTML='<h3>💱 Маркет</h3>'+(items.length===0?'<p style="color:#aaa">Нет предложений</p>':items.map(i=>`<div class="card"><div class="emoji-big">${i.emoji}</div><div class="info"><div class="name">${i.name} <span class="rarity-${i.rarity}">[${i.rarity}]</span></div><div class="detail">Продавец: ${i.seller} | Множитель: x${i.multiplier}</div><div class="gold">💎 ${i.price} TON</div></div><button class="btn btn-sm" onclick="buySkin(${i.id})">Купить</button></div>`).join('')); }); }
             else if(t==='top'){ api('/api/top_tappers').then(top=>{ c.innerHTML='<h3>🏆 Топ таперов</h3>'+top.map((p,i)=>`<div class="card"><div class="emoji-big">${['🥇','🥈','🥉'][i]||'👤'}</div><div class="info"><div class="name">${p.name||'Игрок'}</div><div class="detail">👆 ${p.taps.toLocaleString()} тапов | ⭐ ${p.level} ур</div></div></div>`).join(''); }); }
         }
@@ -88,6 +88,8 @@
         async function sellSkin(invId){ const price=prompt('Цена в TON:'); if(price&&parseFloat(price)>0){ const d=await api('/api/sell_skin?inv_id='+invId+'&price='+price); if(d.success){ load(); showFloat('📤 Выставлено!'); } } }
         async function buySkin(invId){ const d=await api('/api/buy_skin?inv_id='+invId); if(d.success){ userData=d.user; load(); showFloat('📥 Куплено!'); } else alert(d.error); }
         async function upgradeSkin(invId){ const d=await api('/api/upgrade_skin?inv_id='+invId); if(d.success){ userData=d.user; load(); showFloat('⬆ Улучшено!'); } else alert(d.error); }
+        async function stakeSkin(invId){ const days=prompt('На сколько дней (1-30)?','7'); if(days&&parseInt(days)>0){ const d=await api('/api/stake_skin?inv_id='+invId+'&days='+days); if(d.success){ load(); showFloat('🔒 Стейк! +'+d.total+' TON'); } else alert(d.error); } }
+        async function claimStake(invId){ const d=await api('/api/claim_stake?inv_id='+invId); if(d.success){ userData=d.user; load(); showFloat('💰 +'+d.reward+' TON!'); } else alert(d.error); }
         function showFloat(text){ const el=document.createElement('div'); el.className='float'; el.textContent=text; el.style.left=Math.random()*70+'%'; el.style.bottom='200px'; document.body.appendChild(el); setTimeout(()=>el.remove(),1200); }
         document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab))); load();
     </script>
