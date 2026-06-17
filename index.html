@@ -150,11 +150,10 @@
             } else if (t === 'raid') {
                 c.innerHTML = `<div class="card" style="text-align:center;flex-direction:column"><p style="font-size:50px">🥷</p><p>Налёт на игрока! Шанс: 45% | 20⚡</p><button class="btn btn-red" onclick="raid()">СОВЕРШИТЬ НАЛЁТ</button></div>`;
             } else if (t === 'shop') {
-                c.innerHTML = `<h3>💎 Магазин</h3><p style="color:#aaa;font-size:12px;margin-bottom:10px">Покупайте через XRocket. Кристаллы зачислятся автоматически.</p>
-                <div class="card" onclick="donate(10,'⚡ Энергия')"><div class="emoji">⚡</div><div class="info"><div class="name">Энергия +100</div><div class="gold">10 ⭐</div></div><button class="btn btn-sm">Купить</button></div>
-                <div class="card" onclick="donate(25,'💰 50 000 ₽')"><div class="emoji">💰</div><div class="info"><div class="name">50 000 ₽</div><div class="gold">25 ⭐</div></div><button class="btn btn-sm">Купить</button></div>
-                <div class="card" onclick="donate(50,'🛡️ Защита 24ч')"><div class="emoji">🛡️</div><div class="info"><div class="name">Защита 24ч</div><div class="gold">50 ⭐</div></div><button class="btn btn-sm">Купить</button></div>
-                <div class="card" onclick="donate(200,'🌟 VIP 7 дней')"><div class="emoji">🌟</div><div class="info"><div class="name">VIP 7 дней</div><div class="gold">200 ⭐</div></div><button class="btn btn-sm">Купить</button></div>`;
+                c.innerHTML = `<h3>💎 Магазин</h3>
+                <p style="color:#aaa;font-size:12px;margin-bottom:10px">Оплата через XRocket. После оплаты кристаллы зачисляются.</p>
+                <div class="card" onclick="window.open('https://t.me/xrocket?start=inv_hq3FuBTCGImdAiz','_blank')"><div class="emoji">💎</div><div class="info"><div class="name">Пополнить счёт</div><div class="gold">Через XRocket</div></div><button class="btn btn-sm">Открыть</button></div>
+                <p style="color:#aaa;font-size:11px;margin-top:10px">После оплаты напишите администратору для зачисления кристаллов.</p>`;
             } else if (t === 'achieve') {
                 c.innerHTML = '<h3>🏆 Достижения</h3>' + achievements.map(a => `<div class="card"><div class="emoji">${a.unlocked?a.emoji:'🔒'}</div><div class="info"><div class="name">${a.name}</div><div class="desc">${a.desc} ${a.unlocked?'✅':''}</div></div></div>`).join('');
             } else if (t === 'top') {
