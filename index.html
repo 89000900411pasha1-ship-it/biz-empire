@@ -3,88 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Бизнес-Империя</title>
+    <title>NFT Tap Game</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(180deg, #0a0a2e, #1a1a4e); color: #fff; min-height: 100vh; }
-        .header { background: linear-gradient(135deg, #2a1a5e, #4a2a8e); padding: 10px 15px; text-align: center; position: sticky; top: 0; z-index: 100; }
-        .header h1 { font-size: 20px; margin-bottom: 2px; }
-        .balance { font-size: 24px; font-weight: bold; color: #ffd700; }
-        .stats { font-size: 11px; color: #aaa; margin-top: 2px; }
-        .stats span { margin: 0 3px; }
-        .xp-bar { background: #2a2a4e; border-radius: 5px; height: 6px; margin: 6px 0 2px; overflow: hidden; }
-        .xp-fill { background: linear-gradient(90deg, #ffd700, #ffaa00); height: 100%; border-radius: 5px; transition: width 0.5s ease; }
-        .tabs { display: flex; background: #1a1a3e; position: sticky; top: 115px; z-index: 99; overflow-x: auto; }
-        .tab { flex: 1; min-width: 40px; padding: 8px 3px; text-align: center; cursor: pointer; border-bottom: 3px solid transparent; font-size: 10px; white-space: nowrap; }
+        body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(180deg, #0a0015, #1a0030); color: #fff; min-height: 100vh; user-select: none; }
+        .header { background: linear-gradient(135deg, #2a0050, #5a00a0); padding: 15px; text-align: center; }
+        .header h1 { font-size: 22px; margin-bottom: 5px; }
+        .balance-row { display: flex; justify-content: center; gap: 20px; font-size: 14px; margin-top: 5px; }
+        .balance-row span { color: #ffd700; font-weight: bold; }
+        .tap-area { display: flex; flex-direction: column; align-items: center; padding: 30px; }
+        .tap-button {
+            width: 160px; height: 160px; border-radius: 50%;
+            background: radial-gradient(circle, #ffd700, #ff8c00);
+            border: 4px solid #fff; cursor: pointer; font-size: 50px;
+            box-shadow: 0 0 40px rgba(255,215,0,0.5); transition: transform 0.1s;
+        }
+        .tap-button:active { transform: scale(0.9); }
+        .tap-info { margin-top: 15px; font-size: 14px; color: #aaa; }
+        .tabs { display: flex; background: #1a0030; position: sticky; top: 0; z-index: 99; }
+        .tab { flex: 1; padding: 10px; text-align: center; cursor: pointer; font-size: 12px; border-bottom: 3px solid transparent; }
         .tab.active { border-bottom-color: #ffd700; color: #ffd700; }
-        .content { padding: 10px; padding-bottom: 100px; }
-        .card { background: linear-gradient(135deg, #1e1e4e, #2a2a5e); border-radius: 12px; padding: 12px; margin-bottom: 8px; border: 1px solid #3a3a6e; display: flex; align-items: center; gap: 10px; }
-        .emoji { font-size: 32px; min-width: 40px; text-align: center; }
+        .content { padding: 15px; padding-bottom: 80px; }
+        .card { background: linear-gradient(135deg, #1a0040, #2a0050); border-radius: 12px; padding: 12px; margin-bottom: 10px; border: 1px solid #3a0060; display: flex; align-items: center; gap: 10px; }
+        .card:active { transform: scale(0.98); }
+        .emoji-big { font-size: 40px; min-width: 50px; text-align: center; }
         .info { flex: 1; }
         .name { font-weight: bold; font-size: 14px; }
-        .desc { font-size: 11px; color: #aaa; }
-        .green { color: #4caf50; font-size: 12px; }
-        .gold { color: #ffd700; font-size: 12px; }
-        .red { color: #f44336; font-size: 12px; }
-        .btn { background: linear-gradient(135deg, #ffd700, #ffaa00); color: #000; border: none; padding: 8px 14px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 12px; }
+        .detail { font-size: 11px; color: #aaa; }
+        .gold { color: #ffd700; }
+        .btn { background: linear-gradient(135deg, #ffd700, #ff8c00); color: #000; border: none; padding: 10px 18px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px; }
         .btn:active { transform: scale(0.95); }
-        .btn-sm { padding: 5px 10px; font-size: 11px; }
-        .btn-green { background: linear-gradient(135deg, #4caf50, #2e7d32); color: #fff; }
-        .btn-red { background: linear-gradient(135deg, #f44336, #c62828); color: #fff; }
+        .btn-sm { padding: 6px 12px; font-size: 11px; }
+        .btn-purple { background: linear-gradient(135deg, #9c27b0, #6a1b9a); color: #fff; }
         .btn-blue { background: linear-gradient(135deg, #2196f3, #1565c0); color: #fff; }
-        .collect-btn { position: fixed; bottom: 15px; left: 15px; right: 15px; background: linear-gradient(135deg, #4caf50, #2e7d32); padding: 16px; border-radius: 14px; font-size: 18px; font-weight: bold; text-align: center; cursor: pointer; z-index: 999; }
-        .badge { display: inline-block; padding: 2px 6px; border-radius: 8px; font-size: 10px; font-weight: bold; margin-left: 4px; }
-        .badge-purple { background: #9c27b0; }
-        .badge-gold { background: #ffd700; color: #000; }
-        .badge-red { background: #f44336; }
-        .badge-green { background: #4caf50; }
-        .float { position: fixed; font-size: 22px; font-weight: bold; pointer-events: none; animation: up 1.5s ease-out forwards; z-index: 200; }
-        @keyframes up { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-180px); } }
-        .locked { opacity: 0.5; filter: grayscale(1); }
-        .avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; }
-        .event-badge { position: fixed; top: 80px; right: 10px; background: #ff5722; color: #fff; padding: 5px 10px; border-radius: 10px; font-size: 11px; z-index: 150; animation: pulse 2s infinite; }
-        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.7; } }
+        .float { position: fixed; font-size: 24px; font-weight: bold; pointer-events: none; animation: up 1.2s ease-out forwards; z-index: 200; }
+        @keyframes up { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-150px); } }
+        .rarity-common { color: #aaa; }
+        .rarity-uncommon { color: #4caf50; }
+        .rarity-rare { color: #2196f3; }
+        .rarity-epic { color: #9c27b0; }
+        .rarity-legendary { color: #ffd700; }
+        .rarity-mythic { color: #ff4081; }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>👑 Бизнес-Империя</h1>
-        <div class="balance" id="balance">0 ₽</div>
-        <div class="stats">
-            📊<span id="income">0</span>/ч ⚡<span id="energy">100</span> 💎<span id="crystals">0</span> ⭐<span id="level">1</span>ур 👑<span id="prestige">0</span>
-            <span id="vipBadge" style="display:none" class="badge badge-gold">VIP</span>
-            <span id="shieldBadge" style="display:none" class="badge badge-red">🛡️</span>
+        <h1>👆 NFT Tap Game</h1>
+        <div class="balance-row">
+            💎 <span id="tonBalance">0</span> TON | 🪙 <span id="coinBalance">0</span> | ⭐ <span id="level">1</span> ур
         </div>
-        <div class="xp-bar"><div class="xp-fill" id="xpBar" style="width:0%"></div></div>
-        <div style="font-size:10px;color:#aaa"><span id="xpText">0</span> / <span id="xpNeed">52</span> XP</div>
     </div>
-    <div id="eventBanner"></div>
+
+    <div class="tap-area">
+        <button class="tap-button" id="tapBtn" onclick="tap()">👆</button>
+        <div class="tap-info">Множитель: x<span id="multiplier">1.0</span> | Тапов: <span id="totalTaps">0</span></div>
+    </div>
 
     <div class="tabs">
-        <div class="tab active" data-tab="build">🏗️</div>
-        <div class="tab" data-tab="my">🏢</div>
-        <div class="tab" data-tab="tasks">🎯</div>
-        <div class="tab" data-tab="quests">📜</div>
-        <div class="tab" data-tab="raid">🥷</div>
-        <div class="tab" data-tab="shop">💎</div>
-        <div class="tab" data-tab="achieve">🏆</div>
-        <div class="tab" data-tab="top">📊</div>
+        <div class="tab active" data-tab="boxes">📦 Боксы</div>
+        <div class="tab" data-tab="inventory">🎒 Скины</div>
+        <div class="tab" data-tab="market">💱 Маркет</div>
+        <div class="tab" data-tab="top">🏆 Топ</div>
     </div>
 
     <div class="content" id="content"></div>
-    <div class="collect-btn" onclick="collectIncome()">💰 СОБРАТЬ ДОХОД</div>
 
-        <script>
-        function getUserId() {
-            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
-                return window.Telegram.WebApp.initDataUnsafe.user.id;
-            }
-            return 123;
-        }
-
+    <script>
         const API = 'https://pashsasd.pythonanywhere.com';
-        let uid = getUserId();
-        let userData = {}, buildings = [], allBuildings = [], tasks = [], achievements = [], quests = [], tab = 'build';
+        let uid = 123;
+        let userData = {}, inventory = [], tab = 'boxes';
 
         async function api(url) {
             const sep = url.includes('?') ? '&' : '?';
@@ -93,91 +80,103 @@
         }
 
         async function load() {
-            const d = await api('/api/data');
-            userData = d.user; buildings = d.buildings; allBuildings = d.all_buildings || [];
-            achievements = d.achievements || []; quests = d.quests || [];
-            const t = await api('/api/tasks');
-            tasks = t || [];
-            updateUI();
-        }
-
-        function updateUI() {
-            document.getElementById('balance').textContent = (userData.balance||0).toLocaleString() + ' ₽';
-            document.getElementById('income').textContent = (userData.income||0).toLocaleString();
-            document.getElementById('energy').textContent = userData.energy||0;
-            document.getElementById('crystals').textContent = userData.crystals||0;
+            const u = await api('/api/user');
+            userData = u.user;
+            document.getElementById('tonBalance').textContent = (userData.balance_ton||0).toFixed(1);
+            document.getElementById('coinBalance').textContent = Math.floor(userData.balance_coins||0).toLocaleString();
             document.getElementById('level').textContent = userData.level||1;
-            document.getElementById('prestige').textContent = userData.prestige||0;
-            document.getElementById('vipBadge').style.display = (userData.vip_until && userData.vip_until > new Date().toISOString()) ? 'inline' : 'none';
-            document.getElementById('shieldBadge').style.display = (userData.shield_until && userData.shield_until > new Date().toISOString()) ? 'inline' : 'none';
-            const xp = userData.xp || 0;
-            const level = userData.level || 1;
-            const xpNeed = level * 50 + level * level * 2;
-            document.getElementById('xpBar').style.width = Math.min(100, (xp / xpNeed) * 100) + '%';
-            document.getElementById('xpText').textContent = xp;
-            document.getElementById('xpNeed').textContent = xpNeed;
-            const eb = document.getElementById('eventBanner');
-            if (userData.event_type && userData.event_until && userData.event_until > new Date().toISOString()) {
-                const names = {boom:'📈 Бум рынка! Доход x2', fire:'🔥 Пожар!', party:'🎉 Праздник!', tax:'🚔 Налоговая проверка!'};
-                eb.innerHTML = `<div class="event-badge">${names[userData.event_type] || userData.event_type}</div>`;
-            } else { eb.innerHTML = ''; }
+            document.getElementById('totalTaps').textContent = (userData.total_taps||0).toLocaleString();
+            
+            const inv = await api('/api/inventory');
+            inventory = inv;
+            
+            // Находим максимальный множитель
+            const maxMul = Math.max(1.0, ...inv.filter(i => !i.listed).map(i => i.multiplier));
+            document.getElementById('multiplier').textContent = maxMul.toFixed(1);
+            
             showTab(tab);
         }
-                function showTab(t) {
+
+        function showTab(t) {
             tab = t;
             document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
             document.querySelector(`[data-tab="${t}"]`)?.classList.add('active');
             const c = document.getElementById('content');
             
-            if (t === 'build') {
-                c.innerHTML = '<h3>🏗️ Строительство</h3>' + allBuildings.map(b => {
-                    const own = buildings.find(m => m.type === b.type);
-                    const lvl = own ? own.level : 0;
-                    const locked = (userData.level||1) < (b.unlock_level||1);
-                    const cost = Math.floor(b.base_cost * Math.pow(b.cost_mul, lvl));
-                    const inc = Math.floor(b.base_income * Math.pow(b.inc_mul, lvl));
-                    if (locked) return `<div class="card locked"><div class="emoji">🔒</div><div class="info"><div class="name">${b.name}</div><div class="desc">Нужен ${b.unlock_level} уровень</div></div></div>`;
-                    return `<div class="card" onclick="build('${b.type}')"><div class="emoji">${b.emoji}</div><div class="info"><div class="name">${b.name} ${own?`<span class="badge badge-purple">ур.${lvl}</span>`:''}</div><div class="green">📊 ${inc.toLocaleString()} ₽/ч</div><div class="gold">💰 ${cost.toLocaleString()} ₽</div></div><button class="btn">Построить</button></div>`;
-                }).join('');
-            } else if (t === 'my') {
-                c.innerHTML = '<h3>🏢 Мои здания</h3>' + (buildings.length===0?'<p style="color:#aaa">Нет зданий</p>':buildings.map(b => `<div class="card"><div class="emoji">${b.emoji}</div><div class="info"><div class="name">${b.name} <span class="badge badge-purple">ур.${b.level}</span></div><div class="green">📊 ${Math.floor(b.income).toLocaleString()} ₽/ч</div></div></div>`).join(''));
-            } else if (t === 'tasks') {
-                const names = {build:'Построить',collect:'Собрать',raid:'Налёты'};
-                c.innerHTML = '<h3>🎯 Задания</h3>' + tasks.map(tsk => `<div class="card"><div class="info"><div class="name">${names[tsk.type]}: ${tsk.progress}/${tsk.target}</div><div class="gold">💰 ${tsk.reward.toLocaleString()} ₽</div>${tsk.done?'<div class="green">✅</div>':((tsk.progress>=tsk.target&&tsk.progress>0)?`<button class="btn btn-sm" onclick="claim(${tsk.id})">Забрать</button>`:'<div style="color:#aaa">Выполняйте</div>')}</div></div>`).join('') + '<br><button class="btn btn-green" onclick="dailyBonus()">🎁 Ежедневный бонус</button><br><br><button class="btn btn-blue" onclick="prestige()">🔄 Престиж (10M ₽)</button>';
-            } else if (t === 'quests') {
-                const names = {build:'Построить',collect:'Собрать',raid:'Налёты'};
-                c.innerHTML = '<h3>📜 Квесты</h3>' + (quests.length===0?'<p style="color:#aaa">Нет активных квестов</p>':quests.map(q => `<div class="card"><div class="info"><div class="name">${names[q.type]}: ${q.progress}/${q.target}</div><div class="gold">💰 ${q.reward.toLocaleString()} ₽ + ${q.crystals||0}💎</div>${q.progress>=q.target?`<button class="btn btn-sm" onclick="claimQuest(${q.id})">Забрать</button>`:`<div style="color:#aaa">До: ${new Date(q.expires).toLocaleTimeString()}</div>`}</div></div>`).join(''));
-            } else if (t === 'raid') {
-                c.innerHTML = `<div class="card" style="text-align:center;flex-direction:column"><p style="font-size:50px">🥷</p><p>Налёт на игрока! Шанс: 45% | 20⚡</p><button class="btn btn-red" onclick="raid()">СОВЕРШИТЬ НАЛЁТ</button></div>`;
-            } else if (t === 'shop') {
-                c.innerHTML = `<h3>💎 Магазин</h3>
-                <p style="color:#aaa;font-size:12px;margin-bottom:10px">Оплата через XRocket. После оплаты кристаллы зачисляются.</p>
-                <div class="card" onclick="window.open('https://t.me/xrocket?start=inv_hq3FuBTCGImdAiz','_blank')"><div class="emoji">💎</div><div class="info"><div class="name">Пополнить счёт</div><div class="gold">Через XRocket</div></div><button class="btn btn-sm">Открыть</button></div>
-                <p style="color:#aaa;font-size:11px;margin-top:10px">После оплаты напишите администратору для зачисления кристаллов.</p>`;
-            } else if (t === 'achieve') {
-                c.innerHTML = '<h3>🏆 Достижения</h3>' + achievements.map(a => `<div class="card"><div class="emoji">${a.unlocked?a.emoji:'🔒'}</div><div class="info"><div class="name">${a.name}</div><div class="desc">${a.desc} ${a.unlocked?'✅':''}</div></div></div>`).join('');
+            if (t === 'boxes') {
+                api('/api/boxes').then(boxes => {
+                    c.innerHTML = '<h3>📦 Боксы</h3>' + boxes.map(b => `
+                        <div class="card" onclick="openBox(${b.id})">
+                            <div class="emoji-big">${b.emoji}</div>
+                            <div class="info">
+                                <div class="name">${b.name}</div>
+                                <div class="detail">${b.desc}</div>
+                                <div class="gold">💎 ${b.price_ton} TON | 🪙 ${b.price_coins.toLocaleString()}</div>
+                            </div>
+                            <button class="btn btn-sm">Открыть</button>
+                        </div>
+                    `).join('');
+                });
+            } else if (t === 'inventory') {
+                c.innerHTML = '<h3>🎒 Мои скины</h3>' + (inventory.length===0?'<p style="color:#aaa">Нет скинов</p>':inventory.map(s => `
+                    <div class="card">
+                        <div class="emoji-big">${s.emoji}</div>
+                        <div class="info">
+                            <div class="name">${s.name} <span class="rarity-${s.rarity}">[${s.rarity}]</span></div>
+                            <div class="detail">Множитель: x${s.multiplier}</div>
+                            ${s.listed ? `<div class="gold">В продаже за ${s.price} TON</div>` : ''}
+                        </div>
+                    </div>
+                `).join(''));
+            } else if (t === 'market') {
+                c.innerHTML = '<h3>💱 Маркет (скоро)</h3><p style="color:#aaa">Покупка и продажа скинов между игроками</p>';
             } else if (t === 'top') {
-                c.innerHTML = '<h3>📊 Загрузка...</h3>';
-                api('/api/top').then(top => { c.innerHTML = '<h3>📊 Топ-10</h3>' + top.map((p,i) => `<div class="card"><div class="emoji">${p.photo?`<img src="https://t.me/i/userpic/320/${p.photo}.jpg" class="avatar">`:(['🥇','🥈','🥉'][i]||'👤')}</div><div class="info"><div class="name">${p.name||'Игрок'} ${p.prestige?`👑${p.prestige}`:''}</div><div class="gold">💰 ${p.balance.toLocaleString()} ₽</div></div></div>`).join(''); });
+                api('/api/top_tappers').then(top => {
+                    c.innerHTML = '<h3>🏆 Топ таперов</h3>' + top.map((p,i) => `
+                        <div class="card">
+                            <div class="emoji-big">${['🥇','🥈','🥉'][i]||'👤'}</div>
+                            <div class="info">
+                                <div class="name">${p.name||'Игрок'}</div>
+                                <div class="detail">👆 ${p.taps.toLocaleString()} тапов | ⭐ ${p.level} ур</div>
+                            </div>
+                        </div>
+                    `).join('');
+                });
             }
         }
 
-        async function build(type) { const d = await api('/api/build?type='+type); if(d.success){ userData=d.user; buildings=d.buildings; showFloat('+🏗️ +5XP'); updateUI(); } else alert(d.error) }
-        async function collectIncome() { 
-            const d = await api('/api/collect'); 
-            if (d.earned > 0) { userData = d.user; const xp = d.xp_gain || 0; const xpText = xp > 0 ? ' +' + xp + 'XP' : ''; showFloat('+💰 ' + Math.floor(d.earned).toLocaleString() + xpText); }
-            else { showFloat('⏳ Доход пока не накоплен'); }
-            for (const tsk of tasks) { if (!tsk.done && tsk.progress >= tsk.target && tsk.progress > 0) { const cd = await api('/api/claim_task?task_id=' + tsk.id); if (cd.success) { userData = cd.user; showFloat('+🎯 ' + cd.reward.toLocaleString() + ' +50XP'); } } }
-            for (const q of quests) { if (q.progress >= q.target) { const cd = await api('/api/claim_quest?quest_id=' + q.id); if (cd.success) { userData = cd.user; showFloat('+📜 ' + cd.reward.toLocaleString() + '₽'); } } }
-            await load(); updateUI(); 
+        async function tap() {
+            const d = await api('/api/tap');
+            if (d.coins_earned) {
+                userData = d.user;
+                document.getElementById('coinBalance').textContent = Math.floor(userData.balance_coins||0).toLocaleString();
+                document.getElementById('totalTaps').textContent = (userData.total_taps||0).toLocaleString();
+                document.getElementById('level').textContent = userData.level||1;
+                showFloat('+'+d.coins_earned+'🪙');
+            }
         }
-        async function dailyBonus() { const d = await api('/api/daily_bonus'); if (d.success) { userData = d.user; showFloat('🎁 День ' + d.day + ': +' + d.money.toLocaleString() + '₽ +' + (d.crystals||0) + '💎'); updateUI(); } else alert(d.error || 'Уже получено сегодня'); }
-        async function raid() { const d=await api('/api/raid'); if(d.success){ userData=d.user; showFloat('🥷 +'+Math.floor(d.stolen).toLocaleString()+' +15XP'); updateUI(); } else alert(d.error) }
-        async function claim(tid) { const d=await api('/api/claim_task?task_id='+tid); if(d.success){ userData=d.user; load(); } }
-        async function claimQuest(qid) { const d=await api('/api/claim_quest?quest_id='+qid); if(d.success){ userData=d.user; showFloat('+📜 ' + d.reward.toLocaleString() + '₽'); load(); } }
-        async function prestige() { const d=await api('/api/prestige'); if(d.success){ userData=d.user; buildings=d.buildings; showFloat('🔄 Престиж!'); updateUI(); } else alert('Нужно 10 000 000 ₽') }
-        async function donate(amount, item) { const d = await api('/api/create_invoice?amount=' + amount + '&item=' + encodeURIComponent(item)); if (d.url) { window.open(d.url, '_blank'); alert('После оплаты обновите игру.'); } else { alert('Ошибка создания счёта'); } }
-        function showFloat(text) { const el=document.createElement('div'); el.className='float'; el.textContent=text; el.style.left=Math.random()*70+'%'; el.style.bottom='120px'; document.body.appendChild(el); setTimeout(()=>el.remove(),1500) }
+
+        async function openBox(boxId) {
+            const d = await api('/api/open_box?box_id='+boxId);
+            if (d.success) {
+                userData = d.user;
+                document.getElementById('tonBalance').textContent = (userData.balance_ton||0).toFixed(1);
+                showFloat(d.skin.emoji+' '+d.skin.name+'!');
+                load();
+            } else {
+                alert(d.error);
+            }
+        }
+
+        function showFloat(text) {
+            const el = document.createElement('div');
+            el.className = 'float';
+            el.textContent = text;
+            el.style.left = Math.random()*70+'%';
+            el.style.bottom = '200px';
+            document.body.appendChild(el);
+            setTimeout(()=>el.remove(), 1200);
+        }
 
         document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab)));
         load();
