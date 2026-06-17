@@ -69,8 +69,15 @@
     <div class="collect-btn" onclick="collectIncome()">💰 СОБРАТЬ ДОХОД</div>
 
     <script>
+        function getUserId() {
+            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
+                return window.Telegram.WebApp.initDataUnsafe.user.id;
+            }
+            return 123;
+        }
+
         const API = 'https://pashsasd.pythonanywhere.com';
-        const uid = 123;
+        let uid = getUserId();
         let userData = {}, buildings = [], allBuildings = [], tasks = [], achievements = [], tab = 'build';
 
         async function api(url) {
@@ -162,7 +169,7 @@
                 api('/api/top').then(top => {
                     c.innerHTML = '<h3>📊 Топ-10</h3>' + top.map((p,i) => `
                         <div class="card">
-                            <div class="emoji">${p.photo ? `<img src="https://t.me/i/userpic/320/${p.photo}.jpg" class="avatar">` : ['🥇','🥈','🥉'][i]||'👤'}</div>
+                            <div class="emoji">${p.photo ? `<img src="https://t.me/i/userpic/320/${p.photo}.jpg" class="avatar">` : (['🥇','🥈','🥉'][i]||'👤')}</div>
                             <div class="info">
                                 <div class="name">${p.name||'Игрок'} ${p.prestige?`👑${p.prestige}`:''}</div>
                                 <div class="gold">💰 ${p.balance.toLocaleString()} ₽</div>
