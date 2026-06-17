@@ -9,7 +9,7 @@
         body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(180deg, #0a0015, #1a0030); color: #fff; min-height: 100vh; user-select: none; }
         .header { background: linear-gradient(135deg, #2a0050, #5a00a0); padding: 15px; text-align: center; }
         .header h1 { font-size: 22px; margin-bottom: 5px; }
-        .balance-row { display: flex; justify-content: center; gap: 20px; font-size: 14px; margin-top: 5px; }
+        .balance-row { display: flex; justify-content: center; align-items: center; gap: 15px; font-size: 14px; margin-top: 5px; flex-wrap: wrap; }
         .balance-row span { color: #ffd700; font-weight: bold; }
         .tap-area { display: flex; flex-direction: column; align-items: center; padding: 30px; }
         .tap-button {
@@ -38,12 +38,8 @@
         .btn-blue { background: linear-gradient(135deg, #2196f3, #1565c0); color: #fff; }
         .float { position: fixed; font-size: 24px; font-weight: bold; pointer-events: none; animation: up 1.2s ease-out forwards; z-index: 200; }
         @keyframes up { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-150px); } }
-        .rarity-common { color: #aaa; }
-        .rarity-uncommon { color: #4caf50; }
-        .rarity-rare { color: #2196f3; }
-        .rarity-epic { color: #9c27b0; }
-        .rarity-legendary { color: #ffd700; }
-        .rarity-mythic { color: #ff4081; }
+        .rarity-common { color: #aaa; } .rarity-uncommon { color: #4caf50; } .rarity-rare { color: #2196f3; }
+        .rarity-epic { color: #9c27b0; } .rarity-legendary { color: #ffd700; } .rarity-mythic { color: #ff4081; }
     </style>
 </head>
 <body>
@@ -51,6 +47,7 @@
         <h1>👆 NFT Tap Game</h1>
         <div class="balance-row">
             💎 <span id="tonBalance">0</span> TON | 🪙 <span id="coinBalance">0</span> | ⭐ <span id="level">1</span> ур
+            <button class="btn btn-sm btn-purple" onclick="connectWallet()" id="walletBtn">🔗 Кошелёк</button>
         </div>
     </div>
 
@@ -86,14 +83,13 @@
             document.getElementById('coinBalance').textContent = Math.floor(userData.balance_coins||0).toLocaleString();
             document.getElementById('level').textContent = userData.level||1;
             document.getElementById('totalTaps').textContent = (userData.total_taps||0).toLocaleString();
-            
+            if (userData.wallet_address) {
+                document.getElementById('walletBtn').textContent = '✅ ' + userData.wallet_address.substring(0,8) + '...';
+            }
             const inv = await api('/api/inventory');
             inventory = inv;
-            
-            // Находим максимальный множитель
             const maxMul = Math.max(1.0, ...inv.filter(i => !i.listed).map(i => i.multiplier));
             document.getElementById('multiplier').textContent = maxMul.toFixed(1);
-            
             showTab(tab);
         }
 
@@ -165,6 +161,17 @@
                 load();
             } else {
                 alert(d.error);
+            }
+        }
+
+        async function connectWallet() {
+            const address = prompt('Введите адрес вашего TON кошелька:');
+            if (address) {
+                const d = await api('/api/connect_wallet?address=' + address);
+                if (d.success) {
+                    document.getElementById('walletBtn').textContent = '✅ ' + address.substring(0,8) + '...';
+                    alert('Кошелёк привязан!');
+                }
             }
         }
 
