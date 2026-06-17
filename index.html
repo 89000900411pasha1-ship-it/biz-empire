@@ -68,7 +68,7 @@
     <div class="content" id="content"></div>
     <div class="collect-btn" onclick="collectIncome()">💰 СОБРАТЬ ДОХОД</div>
 
-    <script>
+        <script>
         function getUserId() {
             if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
                 return window.Telegram.WebApp.initDataUnsafe.user.id;
@@ -181,7 +181,28 @@
         }
 
         async function build(type) { const d = await api('/api/build?type='+type); if(d.success){ userData=d.user; buildings=d.buildings; showFloat('+🏗️ +5XP'); updateUI(); } else alert(d.error) }
-        async function collectIncome() { const d=await api('/api/collect'); if(d.earned>0){ userData=d.user; showFloat('+💰 '+Math.floor(d.earned).toLocaleString()+' +10XP'); } for(const tsk of tasks){ if(!tsk.done&&tsk.progress>=tsk.target&&tsk.progress>0){ const cd=await api('/api/claim_task?task_id='+tsk.id); if(cd.success){ userData=cd.user; showFloat('+🎯 '+cd.reward.toLocaleString()+' +50XP'); } } } await load(); updateUI(); }
+
+        async function collectIncome() { 
+            const d = await api('/api/collect'); 
+            if (d.earned > 0) { 
+                userData = d.user; 
+                showFloat('+💰 ' + Math.floor(d.earned).toLocaleString() + ' +10XP'); 
+            } else {
+                showFloat('⏳ Доход пока не накоплен');
+            }
+            for (const tsk of tasks) { 
+                if (!tsk.done && tsk.progress >= tsk.target && tsk.progress > 0) { 
+                    const cd = await api('/api/claim_task?task_id=' + tsk.id); 
+                    if (cd.success) { 
+                        userData = cd.user; 
+                        showFloat('+🎯 ' + cd.reward.toLocaleString() + ' +50XP'); 
+                    }
+                }
+            }
+            await load(); 
+            updateUI(); 
+        }
+
         async function raid() { const d=await api('/api/raid'); if(d.success){ userData=d.user; showFloat('🥷 +'+Math.floor(d.stolen).toLocaleString()+' +15XP'); updateUI(); } else alert(d.error) }
         async function claim(tid) { const d=await api('/api/claim_task?task_id='+tid); if(d.success){ userData=d.user; load(); } }
         async function prestige() { const d=await api('/api/prestige'); if(d.success){ userData=d.user; buildings=d.buildings; showFloat('🔄 Престиж!'); updateUI(); } else alert('Нужно 10 000 000 ₽') }
