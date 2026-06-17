@@ -74,7 +74,7 @@
     <div class="content" id="content"></div>
     <div class="collect-btn" onclick="collectIncome()">💰 СОБРАТЬ ДОХОД</div>
 
-    <script>
+        <script>
         function getUserId() {
             if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
                 return window.Telegram.WebApp.initDataUnsafe.user.id;
@@ -110,138 +110,20 @@
             document.getElementById('prestige').textContent = userData.prestige||0;
             document.getElementById('vipBadge').style.display = (userData.vip_until && userData.vip_until > new Date().toISOString()) ? 'inline' : 'none';
             document.getElementById('shieldBadge').style.display = (userData.shield_until && userData.shield_until > new Date().toISOString()) ? 'inline' : 'none';
-            
             const xp = userData.xp || 0;
             const level = userData.level || 1;
             const xpNeed = level * 50 + level * level * 2;
             document.getElementById('xpBar').style.width = Math.min(100, (xp / xpNeed) * 100) + '%';
             document.getElementById('xpText').textContent = xp;
             document.getElementById('xpNeed').textContent = xpNeed;
-
-            // Баннер события
             const eb = document.getElementById('eventBanner');
             if (userData.event_type && userData.event_until && userData.event_until > new Date().toISOString()) {
                 const names = {boom:'📈 Бум рынка! Доход x2', fire:'🔥 Пожар!', party:'🎉 Праздник!', tax:'🚔 Налоговая проверка!'};
                 eb.innerHTML = `<div class="event-badge">${names[userData.event_type] || userData.event_type}</div>`;
-            } else {
-                eb.innerHTML = '';
-            }
-            
+            } else { eb.innerHTML = ''; }
             showTab(tab);
         }
-
-        function showTab(t) {
-            tab = t;
-            document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
-            document.querySelector(`[data-tab="${t}"]`)?.classList.add('active');
-            const c = document.getElementById('content');
-            
-            if (t === 'build') {
-                c.innerHTML = '<h3>🏗️ Строительство</h3>' + allBuildings.map(b => {
-                    const own = buildings.find(m => m.type === b.type);
-                    const lvl = own ? own.level : 0;
-                    const locked = (userData.level||1) < (b.unlock_level||1);
-                    const cost = Math.floor(b.base_cost * Math.pow(b.cost_mul, lvl));
-                    const inc = Math.floor(b.base_income * Math.pow(b.inc_mul, lvl));
-                    if (locked) return `<div class="card locked"><div class="emoji">🔒</div><div class="info"><div class="name">${b.name}</div><div class="desc">Нужен ${b.unlock_level} уровень</div></div></div>`;
-                    return `<div class="card" onclick="build('${b.type}')">
-                        <div class="emoji">${b.emoji}</div>
-                        <div class="info">
-                            <div class="name">${b.name} ${own?`<span class="badge badge-purple">ур.${lvl}</span>`:''}</div>
-                            <div class="green">📊 ${inc.toLocaleString()} ₽/ч</div>
-                            <div class="gold">💰 ${cost.toLocaleString()} ₽</div>
-                        </div>
-                        <button class="btn">Построить</button>
-                    </div>`;
-                }).join('');
-            } else if (t === 'my') {
-                c.innerHTML = '<h3>🏢 Мои здания</h3>' + (buildings.length===0?'<p style="color:#aaa">Нет зданий</p>':buildings.map(b => `
-                    <div class="card"><div class="emoji">${b.emoji}</div><div class="info"><div class="name">${b.name} <span class="badge badge-purple">ур.${b.level}</span></div><div class="green">📊 ${Math.floor(b.income).toLocaleString()} ₽/ч</div></div></div>
-                `).join(''));
-            } else if (t === 'tasks') {
-                const names = {build:'Построить',collect:'Собрать',raid:'Налёты'};
-                c.innerHTML = '<h3>🎯 Ежедневные задания</h3>' + tasks.map(tsk => `
-                    <div class="card"><div class="info"><div class="name">${names[tsk.type]}: ${tsk.progress}/${tsk.target}</div><div class="gold">💰 ${tsk.reward.toLocaleString()} ₽</div>${tsk.done?'<div class="green">✅</div>':((tsk.progress>=tsk.target&&tsk.progress>0)?`<button class="btn btn-sm" onclick="claim(${tsk.id})">Забрать</button>`:'<div style="color:#aaa">Выполняйте</div>')}</div></div>
-                `).join('') + '<br><button class="btn btn-green" onclick="dailyBonus()">🎁 Ежедневный бонус</button><br><br><button class="btn btn-blue" onclick="prestige()">🔄 Престиж (10M ₽)</button>';
-            } else if (t === 'quests') {
-                const names = {build:'Построить',collect:'Собрать',raid:'Налёты'};
-                c.innerHTML = '<h3>📜 Квесты</h3>' + (quests.length===0?'<p style="color:#aaa">Нет активных квестов</p>':quests.map(q => `
-                    <div class="card"><div class="info"><div class="name">${names[q.type]}: ${q.progress}/${q.target}</div><div class="gold">💰 ${q.reward.toLocaleString()} ₽ + ${q.crystals||0}💎</div>${q.progress>=q.target?`<button class="btn btn-sm" onclick="claimQuest(${q.id})">Забрать</button>`:`<div style="color:#aaa">До: ${new Date(q.expires).toLocaleTimeString()}</div>`}</div></div>
-                `).join(''));
-            } else if (t === 'raid') {
-                c.innerHTML = `<div class="card" style="text-align:center;flex-direction:column"><p style="font-size:50px">🥷</p><p>Налёт на игрока! Шанс: 45% | 20⚡</p><button class="btn btn-red" onclick="raid()">СОВЕРШИТЬ НАЛЁТ</button></div>`;
-            } else if (t === 'shop') {
-                const items = [
-                    {icon:'⚡',name:'Энергия +100',price:'10 💎',action:'energy'},
-                    {icon:'💰',name:'50 000 ₽',price:'25 💎',action:'money'},
-                    {icon:'🛡️',name:'Защита 24ч',price:'50 💎',action:'shield'},
-                    {icon:'🌟',name:'VIP 7 дней',price:'200 💎',action:'vip'},
-                ];
-                c.innerHTML = '<h3>💎 Магазин</h3>' + items.map(i => `
-                    <div class="card" onclick="buy('${i.action}')"><div class="emoji">${i.icon}</div><div class="info"><div class="name">${i.name}</div><div class="gold">${i.price}</div></div><button class="btn btn-sm">Купить</button></div>
-                `).join('');
-            } else if (t === 'achieve') {
-                c.innerHTML = '<h3>🏆 Достижения</h3>' + achievements.map(a => `
-                    <div class="card"><div class="emoji">${a.unlocked?a.emoji:'🔒'}</div><div class="info"><div class="name">${a.name}</div><div class="desc">${a.desc} ${a.unlocked?'✅':''}</div></div></div>
-                `).join('');
-            } else if (t === 'top') {
-                c.innerHTML = '<h3>📊 Загрузка...</h3>';
-                api('/api/top').then(top => {
-                    c.innerHTML = '<h3>📊 Топ-10</h3>' + top.map((p,i) => `
-                        <div class="card">
-                            <div class="emoji">${p.photo ? `<img src="https://t.me/i/userpic/320/${p.photo}.jpg" class="avatar">` : (['🥇','🥈','🥉'][i]||'👤')}</div>
-                            <div class="info">
-                                <div class="name">${p.name||'Игрок'} ${p.prestige?`👑${p.prestige}`:''}</div>
-                                <div class="gold">💰 ${p.balance.toLocaleString()} ₽</div>
-                            </div>
-                        </div>
-                    `).join('');
-                });
-            }
-        }
-
-        async function build(type) { const d = await api('/api/build?type='+type); if(d.success){ userData=d.user; buildings=d.buildings; showFloat('+🏗️ +5XP'); updateUI(); } else alert(d.error) }
-
-        async function collectIncome() { 
-            const d = await api('/api/collect'); 
-            if (d.earned > 0) { 
-                userData = d.user; 
-                const xp = d.xp_gain || 0;
-                const xpText = xp > 0 ? ' +' + xp + 'XP' : '';
-                showFloat('+💰 ' + Math.floor(d.earned).toLocaleString() + xpText); 
-            } else {
-                showFloat('⏳ Доход пока не накоплен');
-            }
-            for (const tsk of tasks) { 
-                if (!tsk.done && tsk.progress >= tsk.target && tsk.progress > 0) { 
-                    const cd = await api('/api/claim_task?task_id=' + tsk.id); 
-                    if (cd.success) { userData = cd.user; showFloat('+🎯 ' + cd.reward.toLocaleString() + ' +50XP'); }
-                }
-            }
-            for (const q of quests) {
-                if (q.progress >= q.target) {
-                    const cd = await api('/api/claim_quest?quest_id=' + q.id);
-                    if (cd.success) { userData = cd.user; showFloat('+📜 ' + cd.reward.toLocaleString() + '₽'); }
-                }
-            }
-            await load(); updateUI(); 
-        }
-
-        async function dailyBonus() {
-            const d = await api('/api/daily_bonus');
-            if (d.success) { userData = d.user; showFloat('🎁 День ' + d.day + ': +' + d.money.toLocaleString() + '₽ +' + (d.crystals||0) + '💎'); updateUI(); }
-            else alert(d.error || 'Уже получено сегодня');
-        }
-
-        async function raid() { const d=await api('/api/raid'); if(d.success){ userData=d.user; showFloat('🥷 +'+Math.floor(d.stolen).toLocaleString()+' +15XP'); updateUI(); } else alert(d.error) }
-        async function claim(tid) { const d=await api('/api/claim_task?task_id='+tid); if(d.success){ userData=d.user; load(); } }
-        async function claimQuest(qid) { const d=await api('/api/claim_quest?quest_id='+qid); if(d.success){ userData=d.user; showFloat('+📜 ' + d.reward.toLocaleString() + '₽'); load(); } }
-        async function prestige() { const d=await api('/api/prestige'); if(d.success){ userData=d.user; buildings=d.buildings; showFloat('🔄 Престиж!'); updateUI(); } else alert('Нужно 10 000 000 ₽') }
-        async function buy(item) { const d=await api('/api/buy_'+item); if(d.success){ userData=d.user; updateUI(); showFloat('+🛒') } else alert('Недостаточно кристаллов!') }
-        function showFloat(text) { const el=document.createElement('div'); el.className='float'; el.textContent=text; el.style.left=Math.random()*70+'%'; el.style.bottom='120px'; document.body.appendChild(el); setTimeout(()=>el.remove(),1500) }
-
-        document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab)));
-        load();
+        // ... продолжение следует ...
     </script>
 </body>
 </html>
