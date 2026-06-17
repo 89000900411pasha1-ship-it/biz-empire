@@ -182,11 +182,12 @@
 
         async function build(type) { const d = await api('/api/build?type='+type); if(d.success){ userData=d.user; buildings=d.buildings; showFloat('+🏗️ +5XP'); updateUI(); } else alert(d.error) }
 
-        async function collectIncome() { 
+                async function collectIncome() { 
             const d = await api('/api/collect'); 
             if (d.earned > 0) { 
                 userData = d.user; 
-                showFloat('+💰 ' + Math.floor(d.earned).toLocaleString() + ' +10XP'); 
+                const xp = d.xp_gain || 1;
+                showFloat('+💰 ' + Math.floor(d.earned).toLocaleString() + ' +' + xp + 'XP'); 
             } else {
                 showFloat('⏳ Доход пока не накоплен');
             }
